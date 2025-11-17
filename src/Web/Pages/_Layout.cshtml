@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MekanBudur — Özel Etkinlik Pazar Yeri</title>
+    <meta name="api-base" content="@Configuration["ApiBaseUrl"]" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+</head>
+<body>
+    <header class="topbar">
+        <div class="container row between center">
+            <a class="brand" href="/">MekanBudur</a>
+            <nav class="nav">
+                <a href="/">Pazar Alanı</a>
+                <a href="/Auth/Login">Giriş</a>
+                <a href="/Auth/Register">Kayıt</a>
+                <a href="/User/Dashboard" class="only-user">Kullanıcı Paneli</a>
+                <a href="/Vendor/Dashboard" class="only-vendor">Kurumsal Panel</a>
+                <button id="logoutBtn" class="ghost">Çıkış</button>
+            </nav>
+        </div>
+    </header>
+    <main class="container">
+        @RenderBody()
+    </main>
+    <footer class="footer">
+        <div class="container row between center">
+            <small>© @DateTime.Now.Year MekanBudur</small>
+            <small>Modern · Sade · Kullanışlı</small>
+        </div>
+    </footer>
+    <script src="/js/app.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</body>
+</html>

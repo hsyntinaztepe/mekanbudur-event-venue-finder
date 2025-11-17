@@ -1,0 +1,61 @@
+@page
+<h2>Kullanıcı Paneli</h2>
+
+<section class="card">
+  <h3>Yeni İlan Oluştur</h3>
+  <form id="createListingForm" class="form">
+    <label>Başlık</label>
+    <input name="title" class="input" required />
+
+    <label>Açıklama</label>
+    <textarea name="description" class="input"></textarea>
+
+    <label>Etkinlik Tarihi</label>
+    <input name="eventDate" type="date" class="input" required />
+
+    <label>Konum (şehir/ilçe)</label>
+    <input name="location" class="input" />
+
+    <label>Bütçe (TL)</label>
+    <input name="budget" type="number" class="input" min="1" required />
+
+    <label>Kategori</label>
+    <select name="categoryId" class="input" required id="userCategories"></select>
+
+    <div class="muted">Etkinlik konumunu haritadan işaretleyin (tıklayarak merkez, radius ile alan belirleyin):</div>
+    <div id="listingMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+      <div>
+        <label>Yarıçap (metre)</label>
+        <input type="number" name="radius" class="input" min="100" max="50000" step="100" value="1000" placeholder="1000" />
+        <small class="muted">Etkinlik alanının yarıçapını belirleyin (100-50000 metre)</small>
+      </div>
+      <div>
+        <input type="hidden" name="lat" />
+        <input type="hidden" name="lng" />
+        <input type="text" name="addressLabel" class="input" placeholder="Adres etiketi (opsiyonel)" style="margin-top: 1.5rem;" />
+      </div>
+    </div>
+
+    <button class="btn primary" type="submit">İlanı Yayınla</button>
+  </form>
+</section>
+
+<section>
+  <h3 class="section-title">İlanlarım</h3>
+  <div id="myListings" class="grid"></div>
+</section>
+
+<dialog id="bidsDialog" class="modal">
+  <div class="card">
+    <h3>Teklifler</h3>
+    <div id="bidsContainer"></div>
+    <button class="btn" onclick="document.getElementById('bidsDialog').close()">Kapat</button>
+  </div>
+</dialog>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.initListingCreateMap) window.initListingCreateMap();
+});
+</script>

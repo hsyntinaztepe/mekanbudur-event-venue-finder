@@ -1,0 +1,47 @@
+@page
+<h2>Kayıt Ol</h2>
+<div class="card">
+  <form id="registerForm" class="form">
+    <label>Ad Soyad / Firma Yetkili</label>
+    <input name="displayName" class="input" required />
+
+    <label>Email</label>
+    <input name="email" type="email" class="input" required />
+
+    <label>Şifre</label>
+    <input name="password" type="password" class="input" required />
+
+    <label>Hesap Tipi</label>
+    <select name="role" class="input" required id="roleSelect">
+      <option value="User">Kullanıcı</option>
+      <option value="Vendor">Kurumsal (Hizmet Sağlayıcı)</option>
+    </select>
+
+    <div id="vendorFields" style="display:none;">
+      <label>Firma Adı</label>
+      <input name="companyName" class="input" />
+
+      <label>Hizmet Kategorileri (virgülle)</label>
+      <input name="serviceCategoriesCsv" class="input" placeholder="Venue,Photographer,Bakery" />
+
+      <div class="muted">Mekân konumu (haritadan işaretleyin):</div>
+      <div id="vendorMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
+      <input type="hidden" name="venueLat" />
+      <input type="hidden" name="venueLng" />
+      <input type="text" name="venueAddressLabel" class="input" placeholder="Adres etiketi (opsiyonel)"/>
+    </div>
+
+    <button class="btn primary" type="submit">Kayıt Ol</button>
+  </form>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const roleSelect = document.getElementById('roleSelect');
+  const vendorFields = document.getElementById('vendorFields');
+  const toggle = () => vendorFields.style.display = roleSelect.value === 'Vendor' ? 'block' : 'none';
+  roleSelect.addEventListener('change', toggle);
+  toggle();
+
+  if (window.initVendorMap) window.initVendorMap();
+});
+</script>

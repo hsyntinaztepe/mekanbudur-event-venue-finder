@@ -1,0 +1,25 @@
+@page "/"
+<section class="hero">
+  <h1>Özel etkinlikler için doğru hizmeti bulun</h1>
+  <p>Düğün, doğum günü, kurumsal davet… İlan açın; mekan, pastane, fotoğrafçı ve daha fazlasından teklif alın.</p>
+  <div class="row gap">
+    <a class="btn primary" href="/Auth/Register">Kayıt Ol</a>
+    <a class="btn" href="/Auth/Login">Giriş Yap</a>
+  </div>
+</section>
+
+<section class="filters card">
+  <div class="row gap wrap">
+    <input id="q" type="text" placeholder="Anahtar kelime" class="input" />
+    <input id="location" type="text" placeholder="Konum (örn. İstanbul)" class="input" />
+    <select id="category" class="input"></select>
+    <input id="minBudget" type="number" placeholder="Min bütçe" class="input" />
+    <input id="maxBudget" type="number" placeholder="Maks bütçe" class="input" />
+    <button id="searchBtn" class="btn">Ara</button>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Pazar Alanı</h2>
+  <div id="listingGrid" class="grid"></div>
+</section>

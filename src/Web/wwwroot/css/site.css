@@ -1,0 +1,49 @@
+:root{
+  --bg:#0b0c10;
+  --card:#121318;
+  --muted:#9aa3af;
+  --text:#e5e7eb;
+  --primary:#7c3aed;
+  --primary-700:#6d28d9;
+  --border:#22232b;
+  --ok:#10b981;
+  --danger:#ef4444;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background:linear-gradient(180deg,#0b0c10 0%, #0f1117 100%);
+  color:var(--text);
+}
+a{color:var(--text); text-decoration:none}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.row{display:flex}
+.between{justify-content:space-between}
+.center{align-items:center}
+.gap{gap:12px}
+.wrap{flex-wrap:wrap}
+.topbar{border-bottom:1px solid var(--border); position:sticky; top:0; backdrop-filter:saturate(180%) blur(6px); background:#0b0c10cc; z-index:100}
+.brand{font-weight:800; letter-spacing:.5px}
+.nav a, .nav button{margin-left:14px}
+.nav .ghost{background:none; border:1px solid var(--border); padding:6px 10px; color:var(--text); border-radius:8px; cursor:pointer}
+.hero{padding:40px 0 10px 0}
+.hero h1{font-size:clamp(24px, 5vw, 40px); margin-bottom:8px}
+.hero p{color:var(--muted); max-width:700px}
+.btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:#151822; color:var(--text); cursor:pointer}
+.btn.primary{background:var(--primary); border:1px solid var(--primary-700)}
+.btn.small{padding:6px 8px; font-size:14px}
+.input{padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0f1117; color:var(--text); outline:none; min-width:160px}
+.card{border:1px solid var(--border); border-radius:16px; padding:18px; background:var(--card); box-shadow:0 10px 30px rgba(0,0,0,.25); margin-bottom:16px}
+.grid{display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:16px}
+.muted{color:var(--muted)}
+.section-title{margin:22px 0 10px 0}
+.listing-card{display:flex; flex-direction:column; gap:10px}
+.badge{display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; color:var(--muted)}
+.footer{border-top:1px solid var(--border); margin-top:40px}
+.form{display:grid; gap:10px; max-width:560px}
+.only-user, .only-vendor{display:none}
+.price{font-weight:800; letter-spacing:.4px}
+.modal{border:none; border-radius:12px; padding:0; background:none}
+.modal .card{min-width:360px}
+#map, #listingMap, #vendorMap { background:#0a0c12; }

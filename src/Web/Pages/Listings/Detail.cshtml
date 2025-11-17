@@ -1,0 +1,27 @@
+@page "{id?}"
+@{
+    var id = RouteData.Values["id"]?.ToString() ?? HttpContext.Request.Query["id"].ToString();
+}
+<section>
+  <a class="btn" href="/">&larr; Geri</a>
+</section>
+
+<section class="card">
+  <div id="listingDetail">
+    <h2>İlan</h2>
+    <div class="muted">Yükleniyor...</div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Etkinlik Konumu</h3>
+  <div id="map" style="height:360px; border-radius:12px; overflow:hidden;"></div>
+  <small class="muted" id="mapLabel"></small>
+</section>
+
+<script>
+  window.__listingId = "@id";
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.loadListingDetail) window.loadListingDetail();
+  });
+</script>
