@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: ./src/Api
+      target: build
+    volumes:
+      - ./src/Api:/src
+    command: dotnet watch run --urls http://+:8080
+    environment:
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+
+  web:
+    build:
+      context: ./src/Web
+      target: build
+    volumes:
+      - ./src/Web:/src
+    command: dotnet watch run --urls http://+:8080
+    environment:
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+
+  geo:
+    build:
+      context: ./src/Geo
+      target: build
+    volumes:
+      - ./src/Geo:/src
+    command: dotnet watch run --urls http://+:8080
+    environment:
+      - DOTNET_USE_POLLING_FILE_WATCHER=true

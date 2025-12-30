@@ -21,5 +21,5 @@ namespace MekanBudur.Api.DTOs
         [property: Required] string Password
     );
 
-    public record AuthResponse(string Token, string Role, string DisplayName);
+    public record AuthResponse(string Token, string Role, string DisplayName, Guid UserId);
 }

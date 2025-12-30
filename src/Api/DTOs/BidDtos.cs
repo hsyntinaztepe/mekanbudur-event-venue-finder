@@ -3,18 +3,28 @@ using System.ComponentModel.DataAnnotations;
 namespace MekanBudur.Api.DTOs
 {
     public record BidCreateRequest(
-        [property: Required] Guid EventListingId,
-        [property: Range(1, double.MaxValue)] decimal Amount,
+        Guid EventListingId,
+        List<BidItemDto> Items,
         string? Message
     );
+
+    public record BidItemDto(Guid EventListingItemId, decimal Amount);
 
     public record BidResponse(
         Guid Id,
         Guid EventListingId,
-        decimal Amount,
+        decimal TotalAmount,
+        List<BidItemResponse> Items,
         string? Message,
-        string VendorDisplayName,
+        string VendorName,
         string Status,
         DateTime CreatedAtUtc
+    );
+
+    public record BidItemResponse(
+        Guid Id,
+        Guid EventListingItemId,
+        string CategoryName,
+        decimal Amount
     );
 }

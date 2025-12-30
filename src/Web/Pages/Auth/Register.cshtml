@@ -15,14 +15,18 @@
     <select name="role" class="input" required id="roleSelect">
       <option value="User">Kullanıcı</option>
       <option value="Vendor">Kurumsal (Hizmet Sağlayıcı)</option>
+      <option value="Admin">Admin</option>
     </select>
 
     <div id="vendorFields" style="display:none;">
       <label>Firma Adı</label>
       <input name="companyName" class="input" />
 
-      <label>Hizmet Kategorileri (virgülle)</label>
-      <input name="serviceCategoriesCsv" class="input" placeholder="Venue,Photographer,Bakery" />
+      <label>Hizmet Kategorileri</label>
+      <div id="serviceCategoriesContainer" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; background: #0f1117; border-radius: 10px; border: 1px solid var(--border);">
+        <div class="muted" style="grid-column: 1 / -1; text-align: center;">Yükleniyor...</div>
+      </div>
+      <input type="hidden" name="serviceCategoriesCsv" />
 
       <div class="muted">Mekân konumu (haritadan işaretleyin):</div>
       <div id="vendorMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
@@ -35,13 +39,67 @@
   </form>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const roleSelect = document.getElementById('roleSelect');
   const vendorFields = document.getElementById('vendorFields');
-  const toggle = () => vendorFields.style.display = roleSelect.value === 'Vendor' ? 'block' : 'none';
+  const companyNameInput = document.querySelector('input[name="companyName"]');
+  const serviceCsvInput = document.querySelector('input[name="serviceCategoriesCsv"]');
+  
+  // Load categories for vendor registration
+  let categories = [];
+  try {
+    const apiBase = document.querySelector('meta[name="api-base"]').content || 'http://localhost:8081';
+    const response = await fetch(apiBase + '/api/categories');
+    categories = await response.json();
+    renderCategories(categories);
+  } catch (err) {
+    console.error('Kategoriler yüklenemedi:', err);
+    document.getElementById('serviceCategoriesContainer').innerHTML = '<div class="muted" style="grid-column: 1 / -1; text-align: center;">Kategoriler yüklenemedi.</div>';
+  }
+  
+  function renderCategories(cats) {
+    const container = document.getElementById('serviceCategoriesContainer');
+    if (!cats || cats.length === 0) {
+      container.innerHTML = '<div class="muted" style="grid-column: 1 / -1; text-align: center;">Kategori bulunamadı.</div>';
+      return;
+    }
+    
+    container.innerHTML = cats.map(cat => `
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); transition: all 0.2s;">
+        <input type="checkbox" name="category_${cat.id}" value="${cat.name}" class="category-checkbox" style="width: 18px; height: 18px; cursor: pointer;" />
+        <span style="color: var(--text); font-size: 14px;">${cat.name}</span>
+      </label>
+    `).join('');
+    
+    // Update hidden input when checkboxes change
+    const checkboxes = container.querySelectorAll('.category-checkbox');
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateCategoriesInput);
+    });
+  }
+  
+  function updateCategoriesInput() {
+    const container = document.getElementById('serviceCategoriesContainer');
+    const checkboxes = container.querySelectorAll('.category-checkbox:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    document.querySelector('input[name="serviceCategoriesCsv"]').value = selected.join(',');
+  }
+  
+  const toggle = () => {
+    const isVendor = roleSelect.value === 'Vendor';
+    vendorFields.style.display = isVendor ? 'block' : 'none';
+    if (companyNameInput) companyNameInput.required = isVendor;
+    if (!isVendor && serviceCsvInput) {
+      serviceCsvInput.value = '';
+    }
+    // Haritayı yeniden başlat (boyut sorunlarını çözmek için)
+    if (isVendor) {
+      setTimeout(() => {
+        if (window.initVendorMap) window.initVendorMap();
+      }, 100);
+    }
+  };
   roleSelect.addEventListener('change', toggle);
   toggle();
-
-  if (window.initVendorMap) window.initVendorMap();
 });
 </script>

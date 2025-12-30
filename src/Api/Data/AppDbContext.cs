@@ -7,11 +7,13 @@ namespace MekanBudur.Api.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
 
-        public DbSet<User> Users => Set<User>();
-        public DbSet<VendorProfile> VendorProfiles => Set<VendorProfile>();
-        public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
-        public DbSet<EventListing> EventListings => Set<EventListing>();
-        public DbSet<Bid> Bids => Set<Bid>();
+        public DbSet<User> Users { get; set; } = default!;
+        public DbSet<VendorProfile> VendorProfiles { get; set; } = default!;
+        public DbSet<ServiceCategory> ServiceCategories { get; set; } = default!;
+        public DbSet<EventListing> EventListings { get; set; } = default!;
+        public DbSet<EventListingItem> EventListingItems { get; set; } = default!;
+        public DbSet<Bid> Bids { get; set; } = default!;
+        public DbSet<BidItem> BidItems { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

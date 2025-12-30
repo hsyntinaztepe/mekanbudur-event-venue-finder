@@ -4,26 +4,37 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MekanBudur — Özel Etkinlik Pazar Yeri</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="api-base" content="@Configuration["ApiBaseUrl"]" />
-    <link rel="stylesheet" href="/css/site.css" />
+    <!-- Google Fonts - El Yazısı Fontu -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/site.css?v=@DateTime.Now.Ticks" />
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
 <body>
     <header class="topbar">
         <div class="container row between center">
-            <a class="brand" href="/">MekanBudur</a>
+            <div class="brand-section">
+                <a class="brand" href="/">MekanBudur</a>
+                <span class="nav-divider"></span>
+                <a href="/Auth/Login" class="nav-link-special only-guest">İlan Ver</a>
+                <a href="/User/Dashboard" class="nav-link-special only-user">İlan Ver</a>
+            </div>
             <nav class="nav">
-                <a href="/">Pazar Alanı</a>
-                <a href="/Auth/Login">Giriş</a>
-                <a href="/Auth/Register">Kayıt</a>
-                <a href="/User/Dashboard" class="only-user">Kullanıcı Paneli</a>
+                <a href="/Pazar-Alani">Pazar Alanı</a>
+                <a href="/Auth/Login" class="only-guest">Giriş</a>
+                <a href="/Auth/Register" class="only-guest">Kayıt</a>
+                <a href="/User/MyListings" class="only-user">İlanlarım</a>
                 <a href="/Vendor/Dashboard" class="only-vendor">Kurumsal Panel</a>
+                <a href="/Admin/Dashboard" class="only-admin">Admin Panel</a>
                 <button id="logoutBtn" class="ghost">Çıkış</button>
             </nav>
         </div>
     </header>
-    <main class="container">
+    <main class="@(Context.Request.Path == "/" ? "container-home" : Context.Request.Path.StartsWithSegments("/Pazar-Alani") ? "container-wide" : "container")">
         @RenderBody()
     </main>
     <footer class="footer">
@@ -32,7 +43,7 @@
             <small>Modern · Sade · Kullanışlı</small>
         </div>
     </footer>
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=@DateTime.Now.Ticks"></script>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </body>

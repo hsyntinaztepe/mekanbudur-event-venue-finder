@@ -1,12 +1,647 @@
 @page
-<h2>Kurumsal Panel</h2>
+<div class="vendor-dashboard">
+  <div class="dashboard-header">
+    <h2>Kurumsal Panel</h2>
+    <p class="muted">Mekanınızı tanıtın ve tekliflerinizi yönetin</p>
+  </div>
 
-<section>
-  <h3 class="section-title">Açık İlanlar</h3>
-  <div id="openListings" class="grid"></div>
-</section>
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button class="tab-btn active" data-tab="profile">
+      <span>📝</span> Profil Yönetimi
+    </button>
+    <button class="tab-btn" data-tab="listings">
+      <span>📋</span> Açık İlanlar
+    </button>
+    <button class="tab-btn" data-tab="bids">
+      <span>💼</span> Tekliflerim
+    </button>
+  </div>
 
-<section>
-  <h3 class="section-title">Tekliflerim</h3>
-  <div id="myBids" class="grid"></div>
-</section>
+  <!-- Profile Management Tab -->
+  <div class="tab-content active" id="profileTab">
+    <div class="profile-section">
+      <div class="section-header-inline">
+        <h3>Mekan Bilgileri</h3>
+        <button id="saveProfileBtn" class="btn primary">
+          💾 Profili Kaydet
+        </button>
+      </div>
+      
+      <div id="profileStatus" class="status-message" style="display: none;"></div>
+
+      <form id="vendorProfileForm" class="vendor-form">
+        <!-- Temel Bilgiler -->
+        <div class="form-section">
+          <h4 class="form-section-title">🏢 Temel Bilgiler</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Firma/Mekan Adı *</label>
+              <input type="text" name="companyName" class="input" required placeholder="Örn: Elite Wedding Hall" />
+            </div>
+
+            <div class="form-group">
+              <label>Telefon</label>
+              <input type="tel" name="phoneNumber" class="input" placeholder="0532 xxx xx xx" />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Açıklama</label>
+              <textarea name="description" class="input" rows="4" placeholder="Mekanınızı tanıtın, özelliklerinden bahsedin..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mekan Detayları -->
+        <div class="form-section">
+          <h4 class="form-section-title">🏛️ Mekan Detayları</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Mekan Tipi</label>
+              <select name="venueType" class="input">
+                <option value="">Seçiniz</option>
+                <option value="Kapalı Salon">Kapalı Salon</option>
+                <option value="Açık Alan">Açık Alan</option>
+                <option value="Bahçeli">Bahçeli</option>
+                <option value="Restoran">Restoran</option>
+                <option value="Otel">Otel</option>
+                <option value="Kır Düğünü">Kır Düğünü</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Kapasite (Kişi)</label>
+              <input type="number" name="capacity" class="input" min="0" placeholder="Örn: 300" />
+            </div>
+
+            <div class="form-group">
+              <label>Fiyat Aralığı</label>
+              <input type="text" name="priceRange" class="input" placeholder="Örn: 50.000 - 150.000 ₺" />
+            </div>
+
+            <div class="form-group">
+              <label>Çalışma Saatleri</label>
+              <input type="text" name="workingHours" class="input" placeholder="Örn: Hafta içi 09:00-18:00" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Hizmetler -->
+        <div class="form-section">
+          <h4 class="form-section-title">✨ Hizmetler</h4>
+          <p class="muted" style="margin-bottom: 10px;">Kayıt sırasında seçtiğiniz hizmetler</p>
+          <div id="selectedServicesDisplay" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+            <div class="muted">Henüz hizmet seçilmemiş</div>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #374151;">
+            <h5 style="color: #f59e0b; margin-bottom: 10px; font-size: 0.95rem;">Yeni Hizmet Ekle</h5>
+            <div id="servicesContainer" class="services-grid" style="display: none;">
+              <div class="muted">Yükleniyor...</div>
+            </div>
+            <button type="button" id="toggleServicesBtn" class="btn" style="background: #374151; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; border: none; font-size: 0.9rem;">
+              + Hizmet Ekle
+            </button>
+          </div>
+          <input type="hidden" name="serviceCategoriesCsv" />
+        </div>
+
+        <!-- Olanaklar -->
+        <div class="form-section">
+          <h4 class="form-section-title">🎯 Olanaklar & Özellikler</h4>
+          <div class="amenities-grid">
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Otopark" />
+              <span>🚗 Otopark</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Klima" />
+              <span>❄️ Klima</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Ses Sistemi" />
+              <span>🔊 Ses Sistemi</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Işık Sistemi" />
+              <span>💡 Işık Sistemi</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Sahne" />
+              <span>🎭 Sahne</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Dans Pisti" />
+              <span>💃 Dans Pisti</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Catering" />
+              <span>🍽️ Catering</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Vale" />
+              <span>🚙 Vale</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Wifi" />
+              <span>📶 Wifi</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Engelli Erişimi" />
+              <span>♿ Engelli Erişimi</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Nikah Salonu" />
+              <span>💍 Nikah Salonu</span>
+            </label>
+            <label class="amenity-item">
+              <input type="checkbox" name="amenity" value="Çocuk Oyun Alanı" />
+              <span>🎪 Çocuk Oyun Alanı</span>
+            </label>
+          </div>
+          <input type="hidden" name="amenities" />
+        </div>
+
+        <!-- Fotoğraflar -->
+        <div class="form-section">
+          <h4 class="form-section-title">📸 Mekan Fotoğrafları</h4>
+          <p class="muted" style="margin-bottom: 10px;">Fotoğraf URL'lerini virgülle ayırarak ekleyin</p>
+          <textarea name="photoUrls" class="input" rows="4" placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"></textarea>
+          <div class="photo-upload-toolbar">
+            <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none" />
+            <button type="button" id="addPhotoBtn" class="btn" style="background:#374151;color:#fff;padding:8px 16px;">
+              📁 Dosyadan Fotoğraf Yükle
+            </button>
+            <span id="photoUploadStatus" class="muted" style="visibility:hidden;"></span>
+          </div>
+          <div id="photoPreviewGrid" class="photo-preview-grid">
+            <div class="muted">Henüz fotoğraf eklenmedi.</div>
+          </div>
+          <small class="muted">Not: Her URL'yi virgül ile ayırın. En fazla 10 fotoğraf ekleyebilirsiniz.</small>
+        </div>
+
+        <!-- İletişim & Sosyal Medya -->
+        <div class="form-section">
+          <h4 class="form-section-title">🌐 İletişim & Sosyal Medya</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Website</label>
+              <input type="url" name="website" class="input" placeholder="https://www.example.com" />
+            </div>
+
+            <div class="form-group">
+              <label>Instagram</label>
+              <input type="text" name="instagram" class="input" placeholder="kullaniciadi" />
+            </div>
+
+            <div class="form-group">
+              <label>Facebook</label>
+              <input type="text" name="facebook" class="input" placeholder="facebook.com/kullaniciadi" />
+            </div>
+
+            <div class="form-group">
+              <label>Twitter</label>
+              <input type="text" name="twitter" class="input" placeholder="kullaniciadi" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Konum -->
+        <div class="form-section">
+          <h4 class="form-section-title">📍 Mekan Konumu</h4>
+          <p class="muted" style="margin-bottom: 10px;">Kayıt sırasında belirlediğiniz konum</p>
+          <div id="vendorProfileMap" style="height: 400px; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: #e5e7eb; border: 1px solid #374151;"></div>
+          <p id="locationInfo" style="color: #9ca3af; font-size: 0.9rem; margin-top: 0.5rem;"></p>
+          <input type="text" name="venueAddressLabel" class="input" placeholder="Adres (Örn: Gaziosmanpaşa Mah., Ankara)" style="margin-top: 10px;" />
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Listings Tab -->
+  <div class="tab-content" id="listingsTab">
+    <h3 class="section-title">Açık İlanlar</h3>
+    <div id="openListings" class="grid"></div>
+  </div>
+
+  <!-- Bids Tab -->
+  <div class="tab-content" id="bidsTab">
+    <h3 class="section-title">Tekliflerim</h3>
+    <div id="myBids" class="grid"></div>
+  </div>
+</div>
+
+<dialog id="pazarBidDialog" class="bid-dialog">
+  <div class="bid-dialog__inner" role="document">
+    <header>
+      <h3 id="pazarBidTitle">Teklif Ver</h3>
+      <button type="button" id="closePazarBid" aria-label="Kapat">✕</button>
+    </header>
+    <section id="pazarBidContent"></section>
+  </div>
+</dialog>
+
+<style>
+.vendor-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 24px;
+}
+
+.dashboard-header h2 {
+  margin-bottom: 8px;
+}
+
+.tab-navigation {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tab-btn span {
+  font-size: 18px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.section-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.section-header-inline h3 {
+  margin: 0;
+}
+
+.vendor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.service-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.service-item:hover {
+  border-color: var(--primary);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.service-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.service-item input[type="checkbox"]:checked + span {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.service-item span {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.vendor-listing-card {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  scroll-margin-top: 100px;
+}
+
+.vendor-listing-card.listing-focus-highlight {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
+}
+
+.photo-upload-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.photo-preview-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111827;
+  min-height: 120px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.photo-preview-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-photo-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.remove-photo-btn:hover {
+  background: rgba(239, 68, 68, 0.85);
+}
+
+#photoUploadStatus[data-state="error"] {
+  color: #f87171;
+}
+
+#photoUploadStatus[data-state="success"] {
+  color: #34d399;
+}
+
+.bid-dialog::backdrop {
+  background: rgba(0,0,0,0.6);
+}
+
+.bid-dialog {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 720px;
+  width: 100%;
+  background: var(--card);
+  color: var(--text);
+}
+
+.bid-dialog__inner {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bid-dialog__inner header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#closePazarBid {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.bid-dialog__listing-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bid-dialog__budget {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.bid-dialog__items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.bid-item-row {
+  display: grid;
+  grid-template-columns: 1fr auto 120px;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bid-item-row:last-child {
+  border-bottom: none;
+}
+
+.bid-item-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.bid-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.amenity-item:hover {
+  border-color: var(--primary);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.amenity-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.amenity-item input[type="checkbox"]:checked ~ span {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.amenity-item span {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.status-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.status-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.status-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.status-message.info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+#vendorProfileMap {
+  background: #e5e7eb;
+  border: 2px solid var(--border);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.initVendorDashboard) {
+    await window.initVendorDashboard();
+  } else {
+    console.error('initVendorDashboard fonksiyonu bulunamadı. app.js yüklenmiş mi kontrol edin.');
+  }
+});
+</script>

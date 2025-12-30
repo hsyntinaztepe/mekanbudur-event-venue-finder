@@ -17,12 +17,17 @@ namespace MekanBudur.Api.Models
         [MaxLength(120)]
         public string? Location { get; set; }
 
-        public int CategoryId { get; set; }
-        public ServiceCategory Category { get; set; } = default!;
+        // Legacy fields for migration (will be deprecated)
+        public int? CategoryId { get; set; }
+        public ServiceCategory? Category { get; set; }
 
-        public decimal Budget { get; set; }
+        public decimal? Budget { get; set; }
+
+        public List<EventListingItem> Items { get; set; } = new();
 
         public ListingStatus Status { get; set; } = ListingStatus.Open;
+        
+        public ListingVisibility Visibility { get; set; } = ListingVisibility.Active;
 
         public Guid CreatedByUserId { get; set; }
         public User CreatedByUser { get; set; } = default!;

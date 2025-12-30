@@ -14,6 +14,8 @@ namespace MekanBudur.Api.Models
 
         public decimal Amount { get; set; }
 
+        public List<BidItem> Items { get; set; } = new();
+
         [MaxLength(600)]
         public string? Message { get; set; }
 

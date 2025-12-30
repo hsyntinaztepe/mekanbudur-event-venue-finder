@@ -14,13 +14,24 @@
     <input name="eventDate" type="date" class="input" required />
 
     <label>Konum (şehir/ilçe)</label>
-    <input name="location" class="input" />
+    <div class="location-select-wrapper">
+      <div class="row gap" style="flex-wrap: wrap; gap: 0.75rem;">
+        <select id="provinceSelect" class="input" data-location-select="province" required>
+          <option value="">İl seçin</option>
+        </select>
+        <select id="districtSelect" class="input" data-location-select="district" required disabled>
+          <option value="">Önce il seçin</option>
+        </select>
+      </div>
+      <input type="hidden" name="location" id="locationInput" />
+      <small class="muted" id="locationPreview">Henüz seçim yapılmadı</small>
+    </div>
 
-    <label>Bütçe (TL)</label>
-    <input name="budget" type="number" class="input" min="1" required />
-
-    <label>Kategori</label>
-    <select name="categoryId" class="input" required id="userCategories"></select>
+    <label>İhtiyaç Listesi (Kategori ve Bütçe)</label>
+    <div id="itemsContainer">
+      <!-- Dynamic rows will be added here -->
+    </div>
+    <button type="button" id="addItemBtn" class="btn small" style="margin-bottom:15px">+ Kalem Ekle</button>
 
     <div class="muted">Etkinlik konumunu haritadan işaretleyin (tıklayarak merkez, radius ile alan belirleyin):</div>
     <div id="listingMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
@@ -40,19 +51,6 @@
     <button class="btn primary" type="submit">İlanı Yayınla</button>
   </form>
 </section>
-
-<section>
-  <h3 class="section-title">İlanlarım</h3>
-  <div id="myListings" class="grid"></div>
-</section>
-
-<dialog id="bidsDialog" class="modal">
-  <div class="card">
-    <h3>Teklifler</h3>
-    <div id="bidsContainer"></div>
-    <button class="btn" onclick="document.getElementById('bidsDialog').close()">Kapat</button>
-  </div>
-</dialog>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

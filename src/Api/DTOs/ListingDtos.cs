@@ -1,14 +1,14 @@
 using System.ComponentModel.DataAnnotations;
+using MekanBudur.Api.Models;
 
 namespace MekanBudur.Api.DTOs
 {
     public record ListingCreateRequest(
-        [property: Required] string Title,
-        string? Description,
+        string Title,
+        string Description,
         DateTime EventDate,
-        string? Location,
-        [property: Range(1, double.MaxValue)] decimal Budget,
-        int CategoryId,
+        string Location,
+        List<ListingItemDto> Items,
         // Geo (optional but önerilir)
         double? Latitude,
         double? Longitude,
@@ -16,22 +16,38 @@ namespace MekanBudur.Api.DTOs
         string? AddressLabel
     );
 
+    public record ListingItemDto(int CategoryId, decimal Budget);
+
     public record ListingResponse(
         Guid Id,
         string Title,
         string? Description,
         DateTime EventDate,
         string? Location,
-        decimal Budget,
-        int CategoryId,
-        string CategoryName,
-        string OwnerDisplayName,
+        decimal TotalBudget,
+        List<ListingItemResponse> Items,
+        Guid CreatedByUserId,
+        string CreatedBy,
         string Status,
         DateTime CreatedAtUtc,
         // Geo
         double? Latitude,
         double? Longitude,
         double? Radius,
-        string? AddressLabel
+        string? AddressLabel,
+        // Visibility
+        ListingVisibility Visibility
+    );
+
+    public record ListingItemResponse(
+        Guid Id,
+        int CategoryId,
+        string CategoryName,
+        decimal Budget,
+        string Status
+    );
+
+    public record VisibilityUpdateRequest(
+        [Required] ListingVisibility Visibility
     );
 }

@@ -142,6 +142,10 @@ Proje ilk başlatıldığında otomatik olarak demo hesaplar oluşturulur:
   - Email: `vendor@demo.com`
   - Şifre: `Pass123*`
 
+- **Admin**
+  - Email: `admin@demo.com`
+  - Şifre: `demo123`
+
 ### pgAdmin Kullanımı
 
 pgAdmin'e http://localhost:5050 adresinden erişebilirsiniz.

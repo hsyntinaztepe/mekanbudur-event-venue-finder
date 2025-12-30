@@ -1,3 +1,5 @@
+using Microsoft.Extensions.FileProviders;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
@@ -11,6 +13,18 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+// public klasöründeki dosyaları da sun
+var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
+if (Directory.Exists(publicPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(publicPath),
+        RequestPath = ""
+    });
+}
+
 app.UseRouting();
 app.UseAuthorization();
 

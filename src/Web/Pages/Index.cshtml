@@ -1,25 +1,54 @@
 @page "/"
-<section class="hero">
-  <h1>Özel etkinlikler için doğru hizmeti bulun</h1>
-  <p>Düğün, doğum günü, kurumsal davet… İlan açın; mekan, pastane, fotoğrafçı ve daha fazlasından teklif alın.</p>
-  <div class="row gap">
-    <a class="btn primary" href="/Auth/Register">Kayıt Ol</a>
-    <a class="btn" href="/Auth/Login">Giriş Yap</a>
+
+<section class="hero-fullscreen">
+  <div class="hero-image">
+    <img src="/homepage.png" alt="MekanBudur - Özel Etkinlikler İçin Pazar Yeri" />
+  </div>
+  <div class="hero-overlay">
+    <div class="hero-content">
+      <h1>Özel etkinlikler için doğru hizmeti bulun</h1>
+      <p>Düğün, doğum günü, kurumsal davet… İlan açın; mekan, pastane, fotoğrafçı ve daha fazlasından teklif alın.</p>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>Aşağı Kaydır</span>
+    <div class="scroll-arrow"></div>
   </div>
 </section>
 
-<section class="filters card">
-  <div class="row gap wrap">
-    <input id="q" type="text" placeholder="Anahtar kelime" class="input" />
-    <input id="location" type="text" placeholder="Konum (örn. İstanbul)" class="input" />
-    <select id="category" class="input"></select>
-    <input id="minBudget" type="number" placeholder="Min bütçe" class="input" />
-    <input id="maxBudget" type="number" placeholder="Maks bütçe" class="input" />
-    <button id="searchBtn" class="btn">Ara</button>
+<section class="live-stats">
+  <div class="stats-container">
+    <div class="stat-item">
+      <div class="stat-icon">👥</div>
+      <div class="stat-number" data-target="2847">0</div>
+      <div class="stat-label">Mutlu Kullanıcı</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">🏢</div>
+      <div class="stat-number" data-target="156">0</div>
+      <div class="stat-label">Kayıtlı Mekan</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-number" data-target="98" data-suffix="%">0</div>
+      <div class="stat-label">Müşteri Memnuniyeti</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon">🎉</div>
+      <div class="stat-number" data-target="1250">0</div>
+      <div class="stat-label">Başarılı Etkinlik</div>
+    </div>
   </div>
 </section>
 
-<section>
-  <h2 class="section-title">Pazar Alanı</h2>
-  <div id="listingGrid" class="grid"></div>
-</section>
+<div class="home-content">
+  <section id="pazar-alani" class="marketplace-preview">
+    <div class="section-header">
+      <h2 class="section-title">Pazar Alanı</h2>
+      <a href="/Pazar-Alani" class="btn small">Tümünü Gör</a>
+    </div>
+    <div id="carouselContainer" class="carousel-container">
+      <div id="listingCarousel" class="carousel-grid"></div>
+    </div>
+  </section>
+</div>

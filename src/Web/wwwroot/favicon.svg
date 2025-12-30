@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="MekanBudur">
+  <title>MekanBudur</title>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#7c3aed"/>
+  <path d="M18 46V18h7.4l6.6 12.3L38.6 18H46v28h-6.5V30.6l-6 10.6h-3.2l-6-10.6V46H18z" fill="#ffffff"/>
+</svg>

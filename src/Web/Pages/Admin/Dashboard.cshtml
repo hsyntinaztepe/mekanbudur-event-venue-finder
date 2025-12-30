@@ -1,0 +1,362 @@
+@page
+<section class="admin-dashboard">
+  <header class="admin-hero">
+    <div>
+      <p class="eyebrow">Kontrol Merkezi</p>
+      <h1>Admin Paneli</h1>
+      <p>MekanBudur içeriğini tek ekrandan yönetin: ilan görünürlüğü, mekan kayıtları ve kritik işlemler.</p>
+    </div>
+    <div class="admin-hero-stats">
+      <div class="admin-chip">
+        <span>Durumlar</span>
+        <strong>Aktif · Gizli · Silinmiş</strong>
+      </div>
+      <div class="admin-chip">
+        <span>Varlıklar</span>
+        <strong>İlanlar & Mekanlar</strong>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-panels">
+    <section class="admin-panel">
+      <div class="panel-head">
+        <div>
+          <h2>İlan Yönetimi</h2>
+          <p>Platformdaki tüm ilanların durumunu inceleyin, sorunlu kayıtları anında kaldırın.</p>
+        </div>
+        <button id="adminListingsRefresh" type="button" class="ghost">Yenile</button>
+      </div>
+      <div class="panel-controls">
+        <form id="adminListingSearchForm" class="control-group">
+          <label for="adminListingSearch">Hızlı Arama</label>
+          <input id="adminListingSearch" class="input" placeholder="Başlık, kullanıcı veya konum" />
+          <button class="btn" type="submit">Ara</button>
+        </form>
+        <div class="control-group">
+          <label for="adminListingFilter">Görünürlük</label>
+          <select id="adminListingFilter" class="input">
+            <option value="">Tüm Durumlar</option>
+            <option value="Active">Aktif</option>
+            <option value="Passive">Gizli</option>
+            <option value="Deleted">Silinmiş</option>
+          </select>
+        </div>
+      </div>
+      <div id="adminListingsStatus" class="info-message" style="display:none;"></div>
+      <div class="admin-table-wrapper">
+        <table class="listings-table admin-table">
+          <thead>
+            <tr>
+              <th>Başlık</th>
+              <th>Oluşturan</th>
+              <th>Etkinlik</th>
+              <th>Oluşturma</th>
+              <th>Görünürlük</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="adminListingsTableBody">
+            <tr>
+              <td colspan="6" class="loading">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Mekan Kayıtları</h2>
+          <p>Kurumsal hesapları gözlemleyin, sahte veya pasif mekanları temizleyin.</p>
+        </div>
+        <button id="adminVendorsRefresh" type="button" class="ghost">Yenile</button>
+      </div>
+      <div class="panel-controls">
+        <form id="adminVendorSearchForm" class="control-group">
+          <label for="adminVendorSearch">Mekan / Yetkili</label>
+          <input id="adminVendorSearch" class="input" placeholder="Firma adı veya e-posta" />
+          <button class="btn" type="submit">Ara</button>
+        </form>
+        <div class="control-group">
+          <label for="adminVendorFilter">Onay</label>
+          <select id="adminVendorFilter" class="input">
+            <option value="all">Tümü</option>
+            <option value="verified">Doğrulananlar</option>
+            <option value="pending">Onay Bekliyor</option>
+          </select>
+        </div>
+      </div>
+      <div id="adminVendorsList" class="admin-vendors-grid">
+        <div class="muted">Kayıtlar yükleniyor...</div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-hero {
+  background: radial-gradient(circle at top right, rgba(118,75,162,0.35), rgba(51,63,103,0.7));
+  border-radius: 20px;
+  padding: 2rem;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-hero h1 {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.admin-hero-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.admin-chip {
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 16px;
+  padding: 0.75rem 1.25rem;
+  min-width: 180px;
+}
+
+.admin-chip span {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.admin-chip strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.admin-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-panel {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(15,17,23,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-view {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.btn-delete {
+  background: #dc3545;
+  color: #fff;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.control-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.control-group label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.info-message {
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.info-message.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.info-message.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.admin-table-wrapper {
+  overflow-x: auto;
+}
+
+.listings-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.listings-table th,
+.listings-table td {
+  padding: 0.9rem;
+}
+
+.listings-table tbody tr:nth-child(even) {
+  background: #f8f9fc;
+}
+
+.admin-table th {
+  background: linear-gradient(120deg, #5c6ac4, #8c88ff);
+}
+
+.admin-table td {
+  color: #1b1f3b;
+}
+
+.admin-listing-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.listing-status {
+  display: inline-block;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-passive {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-deleted {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.admin-vendors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.admin-vendor-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(15,17,23,0.02), rgba(15,17,23,0.08));
+}
+
+.admin-vendor-info {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+}
+
+.admin-vendor-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.muted {
+  color: #6c7287;
+}
+
+.error-text {
+  color: #c62828;
+  font-weight: 600;
+}
+
+@@media (max-width: 768px) {
+  .panel-controls {
+    flex-direction: column;
+  }
+
+  .control-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
