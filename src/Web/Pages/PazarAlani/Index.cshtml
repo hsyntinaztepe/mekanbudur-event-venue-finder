@@ -6,16 +6,32 @@
   <!-- Üstte sade filtre satırı -->
   <div class="pazar-filters-bar card">
     <div class="pazar-filters-inline">
-      <input id="q" type="text" placeholder="Anahtar kelime" class="input" />
-      <select id="location" class="input"></select>
-      <select id="category" class="input"></select>
-      <input id="minBudget" type="number" placeholder="Min bütçe" class="input" />
-      <input id="maxBudget" type="number" placeholder="Maks bütçe" class="input" />
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button type="button" class="btn small primary" id="pazarModePlaces">Mekanlar</button>
-        <button type="button" class="btn small" id="pazarModeListings">İlanlar</button>
+        <button type="button" class="btn small primary" id="pazarTypeListings">İlan</button>
+        <button type="button" class="btn small" id="pazarTypeServices">Hizmet</button>
       </div>
+
+      <!-- İlan filtreleri -->
+      <div id="pazarFiltersListings" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+        <input id="pazarListingQ" type="text" placeholder="Anahtar kelime" class="input" />
+        <select id="pazarListingLocation" class="input"></select>
+        <select id="pazarListingCategory" class="input"></select>
+        <input id="pazarListingMinBudget" type="number" placeholder="Min bütçe" class="input" />
+        <input id="pazarListingMaxBudget" type="number" placeholder="Maks bütçe" class="input" />
+      </div>
+
+      <!-- Hizmet filtreleri -->
+      <div id="pazarFiltersServices" style="display:none;flex-wrap:wrap;gap:12px;align-items:center;">
+        <select id="pazarServicePurpose" class="input"></select>
+        <input id="pazarServiceTerm" type="text" placeholder="Hizmet (örn: otopark)" class="input" />
+        <select id="pazarServiceCategory" class="input"></select>
+        <select id="pazarServiceLocation" class="input"></select>
+        <input id="pazarServiceMinBudget" type="number" placeholder="Min bütçe" class="input" />
+        <input id="pazarServiceMaxBudget" type="number" placeholder="Maks bütçe" class="input" />
+      </div>
+
       <button id="searchBtnPazar" class="btn primary">Ara</button>
+      <button id="showAllBtnPazar" class="btn">Hepsini Göster</button>
     </div>
   </div>
 
@@ -23,8 +39,8 @@
   <div class="pazar-grid">
     <main class="pazar-listings card compact" id="pazarListingsPanel">
       <div class="pazar-listings-header">
-        <h3>Aktif İlanlar</h3>
-        <button type="button" class="pazar-listings-toggle" id="pazarListingsToggle">Geniş Görünüm</button>
+        <h3 id="pazarListingsTitle">Aktif İlanlar</h3>
+        <button type="button" class="pazar-listings-toggle" id="pazarListingsToggle">Geniş Görünüm →</button>
       </div>
       <div id="pazarListingGrid" class="pazar-listings-inner"></div>
     </main>
@@ -33,8 +49,11 @@
       <div id="pazarMap" class="pazar-map-inner"></div>
     </section>
 
-    <aside class="pazar-places card">
-      <h3 id="pazarSideTitle">Haritadaki Mekanlar</h3>
+    <aside class="pazar-places card" id="pazarPlacesPanel">
+      <div class="pazar-places-header">
+        <h3 id="pazarSideTitle" style="margin:0;">Haritadaki Mekanlar</h3>
+        <button type="button" class="pazar-places-toggle" id="pazarPlacesToggle">← Geniş Görünüm</button>
+      </div>
       <!-- Şimdilik boş; JS dolduracak veya placeholder kalabilir -->
       <div id="pazarPlaces" class="pazar-places-list"></div>
     </aside>

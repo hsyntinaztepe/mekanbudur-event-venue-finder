@@ -1,7 +1,8 @@
 @page
-<h2>Kayıt Ol</h2>
-<div class="card">
-  <form id="registerForm" class="form">
+<section class="auth-page">
+  <h2 class="auth-title">Kayıt Ol</h2>
+  <div class="card auth-card">
+    <form id="registerForm" class="form auth-form">
     <label>Ad Soyad / Firma Yetkili</label>
     <input name="displayName" class="input" required />
 
@@ -23,7 +24,7 @@
       <input name="companyName" class="input" />
 
       <label>Hizmet Kategorileri</label>
-      <div id="serviceCategoriesContainer" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; background: #0f1117; border-radius: 10px; border: 1px solid var(--border);">
+      <div id="serviceCategoriesContainer" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border);">
         <div class="muted" style="grid-column: 1 / -1; text-align: center;">Yükleniyor...</div>
       </div>
       <input type="hidden" name="serviceCategoriesCsv" />
@@ -36,8 +37,10 @@
     </div>
 
     <button class="btn primary" type="submit">Kayıt Ol</button>
-  </form>
-</div>
+    </form>
+  </div>
+  <p class="muted auth-foot">Hesabın var mı? <a href="/Auth/Login">Giriş yap</a></p>
+</section>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   const roleSelect = document.getElementById('roleSelect');

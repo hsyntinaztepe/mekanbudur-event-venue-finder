@@ -1,12 +1,14 @@
 @page
-<h2>Giriş Yap</h2>
-<div class="card">
-  <form id="loginForm" class="form">
-    <label>Email</label>
-    <input name="email" type="email" class="input" required />
-    <label>Şifre</label>
-    <input name="password" type="password" class="input" required />
-    <button class="btn primary" type="submit">Giriş</button>
-  </form>
-</div>
-<p class="muted">Hesabın yok mu? <a href="/Auth/Register">Kayıt ol</a></p>
+<section class="auth-page">
+  <h2 class="auth-title">Giriş Yap</h2>
+  <div class="card auth-card">
+    <form id="loginForm" class="form auth-form">
+      <label>Email</label>
+      <input name="email" type="email" class="input" required />
+      <label>Şifre</label>
+      <input name="password" type="password" class="input" required />
+      <button class="btn primary" type="submit">Giriş</button>
+    </form>
+  </div>
+  <p class="muted auth-foot">Hesabın yok mu? <a href="/Auth/Register">Kayıt ol</a></p>
+</section>

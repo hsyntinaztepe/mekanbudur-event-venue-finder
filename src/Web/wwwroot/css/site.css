@@ -34,6 +34,12 @@ a{color:var(--text); text-decoration:none}
   background: rgba(11, 12, 16, 0.85); 
   z-index:100;
   padding: 0 24px;
+  transition: transform 200ms ease;
+  will-change: transform;
+}
+
+.topbar.is-hidden{
+  transform: translateY(-110%);
 }
 .brand{
   font-weight:800; 
@@ -89,9 +95,17 @@ a{color:var(--text); text-decoration:none}
 .hero p{color:var(--muted); max-width:700px}
 .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:#151822; color:var(--text); cursor:pointer}
 .btn.primary{background:var(--primary); border:1px solid var(--primary-700)}
+.btn.danger{background:var(--danger); border:1px solid var(--danger); color:#fff}
 .btn.small{padding:6px 8px; font-size:14px}
 .input{padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0f1117; color:var(--text); outline:none; min-width:160px}
 .card{border:1px solid var(--border); border-radius:16px; padding:18px; background:var(--card); box-shadow:0 10px 30px rgba(0,0,0,.25); margin-bottom:16px}
+
+/* Shared dashboard shell (used by Vendor/User dashboards) */
+.vendor-dashboard{max-width:1200px; margin:0 auto}
+.dashboard-header{margin-bottom:24px}
+.dashboard-header h2{margin-bottom:8px}
+.profile-section{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px}
+
 .grid{display:grid; grid-template-columns: repeat(3, 1fr); gap:16px}
 @media (max-width: 768px) {
   .grid{grid-template-columns: 1fr;}
@@ -212,6 +226,246 @@ a{color:var(--text); text-decoration:none}
   display:flex;
   flex-direction:column;
 }
+
+.vendor-rating-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:6px;
+}
+
+.rating-stars{
+  position:relative;
+  display:inline-block;
+  font-size:18px;
+  line-height:1;
+  letter-spacing:1px;
+  user-select:none;
+  --percent: 0%;
+  --star-fill: #ffd700;
+}
+
+.rating-stars::before{
+  content:"★★★★★";
+  color: var(--muted);
+  opacity:0.55;
+}
+
+.rating-stars::after{
+  content:"★★★★★";
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--percent);
+  overflow:hidden;
+  color: var(--star-fill);
+}
+
+.rating-stars.is-perfect{
+  --star-fill: var(--ok);
+}
+
+.rating-stars.rating-actionable{
+  cursor:pointer;
+}
+
+.vendor-rating-text{
+  font-size:12px;
+}
+
+.pazar-vendor-cover{
+  width:100%;
+  height:120px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background: var(--card);
+  margin-bottom:10px;
+}
+
+.pazar-vendor-cover-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.vendor-public-gallery{
+  margin-top:12px;
+}
+
+.vendor-public-hero-wrap{
+  position:relative;
+}
+
+.vendor-public-hero-link{
+  display:block;
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  background: var(--card);
+}
+
+.vendor-public-hero-link img{
+  width:100%;
+  height:420px;
+  object-fit:cover;
+  display:block;
+}
+
+.vendor-public-hero-btn{
+  position:absolute;
+  top:50%;
+  transform: translateY(-50%);
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,0.85);
+  color: var(--text);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  line-height:1;
+}
+
+.theme-light .vendor-public-hero-btn{
+  background: rgba(255,255,255,0.9);
+}
+
+.vendor-public-hero-btn.is-prev{ left:12px; }
+.vendor-public-hero-btn.is-next{ right:12px; }
+
+.vendor-public-thumbs{
+  display:grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap:10px;
+  margin-top:10px;
+}
+
+.vendor-public-thumb{
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  display:block;
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  background: var(--card);
+  padding:0;
+}
+
+.vendor-public-thumb.is-active{
+  border-color: var(--primary);
+}
+
+.vendor-public-thumb img{
+  width:100%;
+  height:86px;
+  object-fit:cover;
+  display:block;
+}
+
+.vendor-public-map{
+  height: 260px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+@media (max-width: 900px) {
+  .vendor-public-map{ height: 220px; }
+}
+
+@media (max-width: 900px) {
+  .vendor-public-hero-link img{ height:320px; }
+  .vendor-public-thumbs{ grid-template-columns: repeat(3, 1fr); }
+  .vendor-public-thumb img{ height:92px; }
+}
+
+.vendor-public-social{
+  margin-top:16px;
+}
+
+.vendor-public-columns{
+  display:grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap:16px;
+  margin-top:12px;
+}
+
+@media (max-width: 900px) {
+  .vendor-public-columns{
+    grid-template-columns: 1fr;
+  }
+}
+
+.vendor-public-item{
+  padding:10px 0;
+  border-top:1px solid var(--border);
+}
+
+.vendor-public-item:first-child{
+  border-top:none;
+  padding-top:0;
+}
+
+.vendor-public-item-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.vendor-public-item-who{
+  font-weight:600;
+}
+
+.vendor-public-item-when{
+  font-size:12px;
+}
+
+.vendor-public-item-body{
+  margin-top:6px;
+}
+
+.vendor-public-answer{
+  margin-top:8px;
+  font-size:13px;
+}
+
+#vendorPublicHeaderActions{
+  position: relative;
+}
+
+.vendor-public-phone-pop{
+  position:absolute;
+  right:0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  min-width: 260px;
+}
+
+.vendor-public-phone-pop-inner{
+  border:1px solid var(--border);
+  border-radius:14px;
+  background: var(--card);
+  padding:12px;
+}
+
+.vendor-public-phone-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.vendor-public-phone-number{
+  font-weight:600;
+}
 .pazar-listings-header{
   display:flex;
   justify-content:space-between;
@@ -258,6 +512,67 @@ a{color:var(--text); text-decoration:none}
   max-height: 700px;
   overflow-y: auto;
 }
+
+.pazar-places-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:8px;
+}
+
+.pazar-places-toggle{
+  border:none;
+  background:none;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:12px;
+}
+
+.pazar-layout.expanded-places-hidden-map .pazar-map{
+  display:none;
+}
+
+.pazar-layout.expanded-places-hidden-map .pazar-grid{
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 3fr);
+}
+
+/* Geniş görünüm: Haritadaki Mekanlar kartları 4'lü dizilim */
+@media (min-width: 1100px){
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap:12px;
+  }
+
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section > h4,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category > div:first-child{
+    grid-column: 1 / -1;
+  }
+
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section .card,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category .card{
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 1099px){
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:12px;
+  }
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section > h4,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category > div:first-child{
+    grid-column: 1 / -1;
+  }
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-vendor-section .card,
+  .pazar-layout.expanded-places-hidden-map #pazarPlaces .pazar-google-category .card{
+    margin-bottom: 0 !important;
+  }
+}
 .pazar-places-list{
   display:flex;
   flex-direction:column;
@@ -302,7 +617,7 @@ label:has(.category-checkbox:checked) { border-color: var(--primary) !important;
 @keyframes slideInHorizontal {
   from {
     opacity: 0;
-    transform: translateX(40px);
+    transform: translateX(-40px);
   }
   to {
     opacity: 1;

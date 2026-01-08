@@ -1,0 +1,105 @@
+@page "/home"
+
+<section class="home-light">
+  <section class="home-hero" aria-label="Tanıtım">
+    <div class="home-hero-media" aria-hidden="true">
+      <img class="home-hero-img home-hero-img-1" src="/1.png" alt="" />
+      <img class="home-hero-img home-hero-img-2" src="/2.png" alt="" />
+    </div>
+    <div class="home-hero-overlay" aria-hidden="true"></div>
+    <div class="container home-hero-content">
+      <h1 class="home-hero-title">MekanBudur: Keşfet, Karşılaştır, Teklif Al.</h1>
+      <p class="home-hero-subtitle">Mekandan hizmete, etkinliğin için her şey MekanBudur'da.</p>
+
+      <div class="home-hero-search" role="search" aria-label="Hizmet ve şehir seçimi">
+        <div class="home-hero-field">
+          <div class="home-hero-field-label">Nasıl Yardımcı Olabiliriz?</div>
+          <button id="homeServiceSelectBtn" class="home-hero-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">Seçin</button>
+          <div id="homeServiceMenu" class="home-hero-menu" role="listbox" aria-label="Hizmet listesi"></div>
+        </div>
+
+        <div class="home-hero-divider" aria-hidden="true"></div>
+
+        <div class="home-hero-field">
+          <div class="home-hero-field-label">Şehir</div>
+          <button id="homeCitySelectBtn" class="home-hero-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">Seçin</button>
+          <div id="homeCityMenu" class="home-hero-menu" role="listbox" aria-label="Şehir listesi"></div>
+        </div>
+
+        <button id="homeListBtn" class="btn primary home-hero-cta" type="button">Firmaları Listele</button>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="home-hero-ribbon" aria-label="Kampanya">
+    <div class="container">
+      <span class="home-hero-ribbon-text">
+        Sevdiklerinizle <span class="home-hero-ribbon-badge">2026</span>. Yeni yıla özel kampanyalar
+      </span>
+    </div>
+  </div>
+
+  <div class="container">
+    <section class="card home-stream">
+      <div class="row between center" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+        <h2 class="section-title" style="margin:0;">Mekanları Keşfet</h2>
+        <a class="btn small" href="/Pazar-Alani">Haritada Gör</a>
+      </div>
+      <div class="home-venue-stream" aria-label="Mekan görselleri akışı">
+        <div id="homeVenueTrack" class="home-venue-track"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="container">
+    <section class="home-active-listings">
+      <div class="row between center" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+        <h2 class="section-title" style="margin:0;">Aktif ilanlar</h2>
+        <a class="btn small" href="/Marketplace">Tümünü Gör</a>
+      </div>
+      <div class="home-listing-stream" aria-label="Aktif ilan akışı">
+        <div id="homeListingTrack" class="home-listing-track"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="container">
+    <h2 class="section-title">Bugün ne yapmak istersin?</h2>
+    <div class="grid home-grid-2">
+      <article class="card">
+        <h3>Mekan Keşfet</h3>
+        <p class="muted">
+          Popüler mekanları haritada gör, yakın çevrendeki seçenekleri fotoğraf ve puanlarıyla hızlıca karşılaştır.
+        </p>
+        <div class="row gap wrap">
+          <a class="btn primary" href="/Pazar-Alani">Haritaya Git</a>
+          <a class="btn" href="/Marketplace">Tüm İlanlar</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Etkinlik Oluştur</h3>
+        <p class="muted">
+          Düğün, doğum günü, davet… Bütçeni ve ihtiyaçlarını yaz; mekanlar ve vendor’lar teklif göndermeye başlasın.
+        </p>
+        <div class="row gap wrap">
+          <a class="btn primary" href="/Auth/Login">İlan Ver</a>
+          <a class="btn" href="/Auth/Register">Hesap Aç</a>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <div class="container">
+    <section class="card home-teaser">
+      <div>
+        <h3>Merak uyandıran küçük bir tur</h3>
+      </div>
+      <div class="row gap wrap">
+        <a class="btn primary" href="/Pazar-Alani">Şimdi Deneyimle</a>
+      </div>
+    </section>
+  </div>
+</section>
+

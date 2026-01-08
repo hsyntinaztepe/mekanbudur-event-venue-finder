@@ -50,6 +50,112 @@
   function displayName() { return localStorage.getItem('displayName') || ''; }
   function userId() { return localStorage.getItem('userId') || ''; }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function normalizePlaceKey(name) {
+    let s = String(name || '').trim().toLowerCase();
+    if (!s) return '';
+
+    // Turkish specific
+    s = s
+      .replace(/ı/g, 'i')
+      .replace(/ş/g, 's')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c');
+
+    // Strip diacritics (NFKD)
+    try {
+      s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    } catch (_) {
+      // ignore if normalize isn't supported
+    }
+
+    // Keep alnum, collapse others
+    s = s.replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return s;
+  }
+
+  let placePhotosManifestPromise = null;
+  function getPlacePhotosManifest() {
+    if (placePhotosManifestPromise) return placePhotosManifestPromise;
+    placePhotosManifestPromise = fetch('/img/place-photos/manifest.json', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+    return placePhotosManifestPromise;
+  }
+
+  function googlePlacePhotoUrl(photoReference, maxWidth) {
+    const ref = String(photoReference || '').trim();
+    if (!ref) return '';
+    const w = Number(maxWidth) || 640;
+    return `${apiBase}/api/google-places/photo?photoRef=${encodeURIComponent(ref)}&maxWidth=${encodeURIComponent(String(w))}`;
+  }
+
+  function localCategoryBaseName(category) {
+    const key = String(category || '').toLowerCase();
+    const filename = (
+      key === 'wedding' ? 'wedding' :
+      key === 'bakery' ? 'bakery' :
+      key === 'florist' ? 'florist' :
+      key === 'photographer' ? 'photographer' :
+      key === 'restaurant' ? 'restaurant' :
+      'venue'
+    );
+    return filename;
+  }
+
+  function localCategoryAssetUrl(category, ext) {
+    const base = localCategoryBaseName(category);
+    const safeExt = String(ext || 'svg').toLowerCase();
+    return `/img/categories/${base}.${safeExt}`;
+  }
+
+  function createCategoryImageElement(category, photoReference, width, height, className, altText) {
+    const img = document.createElement('img');
+    if (className) img.className = className;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.alt = altText || 'Mekan görseli';
+
+    const w = Number(width) || 640;
+    const googleUrl = googlePlacePhotoUrl(photoReference, w);
+    const localSvg = localCategoryAssetUrl(category, 'svg');
+
+    const placeKey = normalizePlaceKey(altText);
+    const setInitialSrc = () => {
+      img.src = googleUrl || localSvg || localCategoryAssetUrl('venue', 'svg');
+    };
+
+    // Always set a placeholder immediately (avoid empty src while manifest loads).
+    setInitialSrc();
+
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = localSvg || localCategoryAssetUrl('venue', 'svg');
+    };
+
+    // Prefer local cached place photo when available (no external API).
+    if (placeKey) {
+      getPlacePhotosManifest().then(manifest => {
+        const path = manifest && manifest.items && manifest.items[placeKey] && manifest.items[placeKey].path;
+        if (path) {
+          img.src = path;
+        }
+      });
+    }
+
+    return img;
+  }
+
   function dashboardPathForRole(r) {
     if (r === 'Vendor') return '/Vendor/Dashboard';
     if (r === 'Admin') return '/Admin/Dashboard';
@@ -188,6 +294,19 @@
     selectEl.innerHTML = '<option value="">Kategori (hepsi)</option>' + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   }
 
+  async function loadCategoriesAsNames(selectEl, placeholderText){
+    const cats = await api('/api/categories');
+    const placeholder = placeholderText || 'Kategori (hepsi)';
+    selectEl.innerHTML = `<option value="">${placeholder}</option>` + cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  }
+
+  function loadEventPurposes(selectEl, placeholderText) {
+    if (!selectEl) return;
+    const placeholder = placeholderText || 'Ne için? (hepsi)';
+    selectEl.innerHTML = `<option value="">${placeholder}</option>` +
+      EVENT_PURPOSE_OPTIONS.map(p => `<option value="${p}">${p}</option>`).join('');
+  }
+
   async function loadUserCategories(){
     const cats = await api('/api/categories');
     // We will use this list to populate dynamic rows, not a single select
@@ -220,6 +339,109 @@
       showCarouselSlide(nextIndex);
       window.__currentCarouselIndex = nextIndex;
     }, 3000);
+  }
+
+  async function initHomeVenueStream() {
+    const track = $('#homeVenueTrack');
+    if (!track) return;
+
+    // Mekanları Keşfet: sabit mekan listeleri + tools/fetch_place_images.py ile indirilen görseller
+    // wwwroot/img/place-photos/manifest.json
+    const places = ([]
+      .concat(Array.isArray(GOLBASI_PLACES) ? GOLBASI_PLACES : [])
+      .concat(Array.isArray(PHOTOGRAPHERS) ? PHOTOGRAPHERS : [])
+      .concat(Array.isArray(BAKERIES) ? BAKERIES : [])
+      .concat(Array.isArray(FLORISTS) ? FLORISTS : []))
+      .filter(p => p && p.name);
+
+    if (!places.length) {
+      track.innerHTML = '<div class="muted" style="padding:12px;">Şu an kayıtlı mekan bulunamadı.</div>';
+      return;
+    }
+
+    const makeImg = (place) => {
+      const img = createCategoryImageElement(place.category, '', 640, 360, 'home-venue-img', place.name);
+      img.setAttribute('aria-busy', 'true');
+      img.addEventListener('load', () => img.setAttribute('aria-busy', 'false'));
+      img.onerror = () => {
+        img.onerror = null;
+        img.src = localCategoryAssetUrl(place.category || 'venue', 'svg');
+      };
+      return img;
+    };
+
+    track.innerHTML = '';
+    const imgs = places.map(makeImg);
+    imgs.forEach(img => track.appendChild(img));
+    // Duplicate once for seamless loop (CSS translates -50%)
+    places.map(makeImg).forEach(img => track.appendChild(img));
+
+    // Eğer dış kaynak görseller tamamen engelliyse, kısa süre sonra uyarı göster.
+    window.setTimeout(() => {
+      const remaining = track.querySelectorAll('img.home-venue-img').length;
+      if (remaining === 0) {
+        track.innerHTML = '<div class="muted" style="padding:12px;">Şu an mekan görselleri yüklenemedi.</div>';
+      }
+    }, 1500);
+
+    const durationSeconds = Math.max(40, Math.min(180, places.length * 4));
+    track.style.setProperty('--homeMarqueeDuration', `${durationSeconds}s`);
+  }
+
+  async function initHomeListingsStream() {
+    const track = $('#homeListingTrack');
+    if (!track) return;
+
+    let list = [];
+    try {
+      const res = await api('/api/listings');
+      list = Array.isArray(res) ? res : [];
+    } catch (err) {
+      console.warn('Home listings stream: API erişilemedi.', err);
+      track.innerHTML = '<div class="muted" style="padding:12px;">Aktif ilanlar yüklenemedi.</div>';
+      return;
+    }
+
+    // Try to keep only active listings if the API provides a flag.
+    const active = list.filter(l => {
+      const visibility = (l && typeof l.visibility !== 'undefined') ? String(l.visibility) : null;
+      const status = (l && typeof l.status !== 'undefined' && l.status !== null) ? String(l.status) : '';
+      if (visibility !== null) return visibility === '1';
+      if (status) return status.toLowerCase() === 'aktif' || status.toLowerCase() === 'active';
+      return true;
+    });
+
+    const sorted = active.slice().sort((a, b) => {
+      const da = a && a.eventDate ? Date.parse(a.eventDate) : 0;
+      const db = b && b.eventDate ? Date.parse(b.eventDate) : 0;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    // Don't list all: keep it limited for a clean stream.
+    const top = sorted.slice(0, 10);
+    if (!top.length) {
+      track.innerHTML = '<div class="muted" style="padding:12px;">Şu an aktif ilan bulunmuyor.</div>';
+      return;
+    }
+
+    // Build a scrolling row. Use existing card HTML (consistent look).
+    track.innerHTML = top.map(l => listingCard(l, true)).join('');
+    // Duplicate once for seamless loop (CSS translates -50%)
+    track.innerHTML += top.map(l => listingCard(l, true)).join('');
+
+    // Slightly stagger entry animation (optional)
+    const cards = track.querySelectorAll('.listing-card');
+    cards.forEach((card, i) => {
+      card.style.opacity = '1';
+      card.style.animationDelay = `${(i % top.length) * 0.06}s`;
+      card.classList.add('animate');
+    });
+
+    const durationSeconds = Math.max(45, Math.min(120, top.length * 9));
+    track.style.setProperty('--homeListingMarqueeDuration', `${durationSeconds}s`);
   }
 
   // Live Stats Counter Animation
@@ -351,6 +573,31 @@
     'Zonguldak'
   ];
 
+  const EVENT_PURPOSE_OPTIONS = [
+    'Yıl dönümü',
+    'Düğün',
+    'Nişan',
+    'Kına',
+    'Nikah',
+    'Doğum günü',
+    'Mezuniyet',
+    'Baby shower',
+    'Sünnet',
+    'Evlilik teklifi',
+    'Bekarlığa veda',
+    'Kurumsal etkinlik',
+    'Toplantı',
+    'Kokteyl',
+    'Gala',
+    'Lansman',
+    'Konser',
+    'Festival',
+    'İftar',
+    'Yılbaşı',
+    'Sevgililer günü',
+    'Diğer'
+  ];
+
   // Türkiye şehir koordinatları
   const TR_CITY_COORDS = {
     'Adana': [37.0000, 35.3213],
@@ -473,44 +720,43 @@
     });
   }
 
-  function setPazarMode(mode) {
-    const normalized = mode === 'listings' ? 'listings' : 'places';
-    window.__pazarMode = normalized;
+  function setPazarSearchType(type) {
+    const normalized = type === 'hizmet' ? 'hizmet' : 'ilan';
+    window.__pazarSearchType = normalized;
 
-    const btnPlaces = document.getElementById('pazarModePlaces');
-    const btnListings = document.getElementById('pazarModeListings');
-    const sideTitle = document.getElementById('pazarSideTitle');
+    const btnListings = document.getElementById('pazarTypeListings');
+    const btnServices = document.getElementById('pazarTypeServices');
+    const listingFilters = document.getElementById('pazarFiltersListings');
+    const serviceFilters = document.getElementById('pazarFiltersServices');
 
-    if (btnPlaces && btnListings) {
-      btnPlaces.classList.toggle('primary', normalized === 'places');
-      btnListings.classList.toggle('primary', normalized === 'listings');
+    if (btnListings && btnServices) {
+      btnListings.classList.toggle('primary', normalized === 'ilan');
+      btnServices.classList.toggle('primary', normalized === 'hizmet');
     }
 
-    if (sideTitle) {
-      sideTitle.textContent = normalized === 'places' ? 'Haritadaki Mekanlar' : 'Haritadaki İlanlar';
+    if (listingFilters && serviceFilters) {
+      listingFilters.style.display = normalized === 'ilan' ? 'flex' : 'none';
+      serviceFilters.style.display = normalized === 'hizmet' ? 'flex' : 'none';
     }
 
     return normalized;
   }
 
-  function bindPazarModeToggle() {
-    const btnPlaces = document.getElementById('pazarModePlaces');
-    const btnListings = document.getElementById('pazarModeListings');
-    if (!btnPlaces || !btnListings) return;
+  function bindPazarTypeToggle() {
+    const btnListings = document.getElementById('pazarTypeListings');
+    const btnServices = document.getElementById('pazarTypeServices');
+    if (!btnListings || !btnServices) return;
 
-    // default state
-    setPazarMode(window.__pazarMode || 'places');
-
-    btnPlaces.addEventListener('click', async () => {
-      setPazarMode('places');
-      const selectedCity = (document.getElementById('location') && document.getElementById('location').value) || '';
-      await updatePazarMapAndPlaces(window.__pazarListings || [], selectedCity);
-    });
+    setPazarSearchType(window.__pazarSearchType || 'ilan');
 
     btnListings.addEventListener('click', async () => {
-      setPazarMode('listings');
-      const selectedCity = (document.getElementById('location') && document.getElementById('location').value) || '';
-      await updatePazarMapAndPlaces(window.__pazarListings || [], selectedCity);
+      setPazarSearchType('ilan');
+      await searchPazarDispatch({ skipFetchIfPossible: true });
+    });
+
+    btnServices.addEventListener('click', async () => {
+      setPazarSearchType('hizmet');
+      await searchPazarDispatch({ skipFetchIfPossible: true });
     });
   }
 
@@ -702,14 +948,43 @@
     };
   }
 
-  async function searchPazar(){
-    const params = new URLSearchParams();
-    const q = $('#q').value.trim();
-    const location = $('#location').value.trim();
-    const cat = $('#category').value;
+  function getSelectText(selectEl){
+    if (!selectEl) return '';
+    const opt = selectEl.options && selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
+    const text = opt ? (opt.textContent || '') : '';
+    return (text || '').trim();
+  }
 
-    const minBudget = $('#minBudget').value;
-    const maxBudget = $('#maxBudget').value;
+  function getPazarListingFilters(){
+    return {
+      q: (($('#pazarListingQ') && $('#pazarListingQ').value) || '').trim(),
+      location: (($('#pazarListingLocation') && $('#pazarListingLocation').value) || '').trim(),
+      categoryId: (($('#pazarListingCategory') && $('#pazarListingCategory').value) || '').trim(),
+      categoryName: getSelectText($('#pazarListingCategory')),
+      minBudget: (($('#pazarListingMinBudget') && $('#pazarListingMinBudget').value) || '').trim(),
+      maxBudget: (($('#pazarListingMaxBudget') && $('#pazarListingMaxBudget').value) || '').trim(),
+    };
+  }
+
+  function getPazarServiceFilters(){
+    return {
+      purpose: (($('#pazarServicePurpose') && $('#pazarServicePurpose').value) || '').trim(),
+      service: (($('#pazarServiceTerm') && $('#pazarServiceTerm').value) || '').trim(),
+      category: (($('#pazarServiceCategory') && $('#pazarServiceCategory').value) || '').trim(),
+      location: (($('#pazarServiceLocation') && $('#pazarServiceLocation').value) || '').trim(),
+      minBudget: (($('#pazarServiceMinBudget') && $('#pazarServiceMinBudget').value) || '').trim(),
+      maxBudget: (($('#pazarServiceMaxBudget') && $('#pazarServiceMaxBudget').value) || '').trim(),
+    };
+  }
+
+  async function searchPazarListings(filtersOverride = null){
+    const params = new URLSearchParams();
+    const f = filtersOverride || getPazarListingFilters();
+    const q = f.q;
+    const location = f.location;
+    const cat = f.categoryId;
+    const minBudget = f.minBudget;
+    const maxBudget = f.maxBudget;
     if (q) params.set('q', q);
     if (location) params.set('location', location);
     if (cat) params.set('categoryId', cat);
@@ -718,11 +993,10 @@
     const list = await api('/api/listings' + (params.toString() ? ('?' + params.toString()) : ''));
     
     const grid = $('#pazarListingGrid');
-    if (!list.length) {
-      grid.innerHTML = '<div class="muted">Kriterlere uygun ilan bulunamadı.</div>';
+    if (!Array.isArray(list) || !list.length) {
+      if (grid) grid.innerHTML = '<div class="muted">Kriterlere uygun ilan bulunamadı.</div>';
       window.__pazarListings = [];
-      await updatePazarMapAndPlaces([], location);
-      return;
+      return [];
     }
     
     grid.innerHTML = list.map(l => listingCard(l, false, { usePazarModal: true })).join('');
@@ -736,7 +1010,125 @@
 
     // Harita ve mekan listesi için verileri sakla
     window.__pazarListings = list;
-    await updatePazarMapAndPlaces(list, location);
+    return list;
+  }
+
+  async function searchPazarVendors(vendorParams){
+    const params = new URLSearchParams();
+
+    const vp = vendorParams || {};
+    if (vp.q) params.set('q', vp.q);
+    if (vp.location) params.set('location', vp.location);
+    if (vp.purpose) params.set('purpose', vp.purpose);
+    if (vp.service) params.set('service', vp.service);
+    if (vp.category) params.set('category', vp.category);
+    if (vp.minBudget) params.set('minBudget', vp.minBudget);
+    if (vp.maxBudget) params.set('maxBudget', vp.maxBudget);
+
+    let vendors = [];
+    try {
+      vendors = await api('/api/vendors/map' + (params.toString() ? ('?' + params.toString()) : ''));
+    } catch (err) {
+      console.error('Vendor search error:', err);
+      vendors = [];
+    }
+
+    window.__pazarVendors = Array.isArray(vendors) ? vendors : [];
+    return window.__pazarVendors;
+  }
+
+  async function showAllPazar(){
+    const results = await Promise.all([
+      searchPazarListings({ q: '', location: '', categoryId: '', categoryName: '', minBudget: '', maxBudget: '' }).catch(() => []),
+      searchPazarVendors({}).catch(() => [])
+    ]);
+    const listings = Array.isArray(results[0]) ? results[0] : [];
+    const vendors = Array.isArray(results[1]) ? results[1] : [];
+    await updatePazarMapAndPlaces(listings, '', { vendorPlaces: vendors });
+  }
+
+  async function searchPazarDispatch(options = {}){
+    const type = window.__pazarSearchType || 'ilan';
+    const { skipFetchIfPossible = false } = options || {};
+
+    if (type === 'ilan') {
+      const listingFilters = getPazarListingFilters();
+      const selectedCity = (listingFilters.location || '').trim();
+
+      if (skipFetchIfPossible && Array.isArray(window.__pazarListings) && window.__pazarListings.length) {
+        await updatePazarMapAndPlaces(window.__pazarListings, selectedCity, {
+          vendorPlaces: [],
+          skipPlacesPanel: true
+        });
+        return;
+      }
+
+      const listings = await searchPazarListings(listingFilters).catch(() => []);
+      await updatePazarMapAndPlaces(listings, selectedCity, {
+        vendorPlaces: [],
+        skipPlacesPanel: true
+      });
+      return;
+    }
+
+    // hizmet
+    const serviceFilters = getPazarServiceFilters();
+    const selectedCity = (serviceFilters.location || '').trim();
+    const vendorQuery = {
+      location: serviceFilters.location,
+      purpose: serviceFilters.purpose,
+      service: serviceFilters.service,
+      category: serviceFilters.category,
+      minBudget: serviceFilters.minBudget,
+      maxBudget: serviceFilters.maxBudget,
+    };
+
+    if (skipFetchIfPossible && Array.isArray(window.__pazarVendors) && window.__pazarVendors.length) {
+      await updatePazarMapAndPlaces([], selectedCity, { vendorPlaces: window.__pazarVendors });
+      return;
+    }
+
+    const vendors = await searchPazarVendors(vendorQuery).catch(() => []);
+    await updatePazarMapAndPlaces([], selectedCity, { vendorPlaces: vendors });
+  }
+
+  async function searchMarketplace(){
+    const grid = $('#marketplaceGrid');
+    if (!grid) return;
+
+    const params = new URLSearchParams();
+    const qEl = $('#q');
+    const locationEl = $('#location');
+    const categoryEl = $('#category');
+    const minBudgetEl = $('#minBudget');
+    const maxBudgetEl = $('#maxBudget');
+
+    const q = qEl ? qEl.value.trim() : '';
+    const location = locationEl ? locationEl.value.trim() : '';
+    const cat = categoryEl ? categoryEl.value : '';
+    const minBudget = minBudgetEl ? minBudgetEl.value : '';
+    const maxBudget = maxBudgetEl ? maxBudgetEl.value : '';
+
+    if (q) params.set('q', q);
+    if (location) params.set('location', location);
+    if (cat) params.set('categoryId', cat);
+    if (minBudget) params.set('minBudget', minBudget);
+    if (maxBudget) params.set('maxBudget', maxBudget);
+
+    const list = await api('/api/listings' + (params.toString() ? ('?' + params.toString()) : ''));
+    if (!Array.isArray(list) || !list.length) {
+      grid.innerHTML = '<div class="muted">Kriterlere uygun ilan bulunamadı.</div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(l => listingCard(l, false)).join('');
+    const cards = grid.querySelectorAll('.listing-card');
+    cards.forEach((card, i) => {
+      setTimeout(() => {
+        card.style.animationDelay = `${i * 0.08}s`;
+        card.classList.add('animate');
+      }, 0);
+    });
   }
 
   let pazarBidGridBound = false;
@@ -744,46 +1136,54 @@
 
   function ensurePazarBidButtonBinding() {
     if (pazarBidGridBound) return;
-    const grid = $('#pazarListingGrid');
-    if (!grid) return;
-    grid.addEventListener('click', (evt) => {
-      const trigger = evt.target.closest('[data-open-pazar-bid]');
-      if (!trigger) return;
-      evt.preventDefault();
-      evt.stopPropagation();
-      openPazarBidModal(trigger.getAttribute('data-open-pazar-bid'));
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('[data-open-pazar-bid]') : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute('data-open-pazar-bid');
+      if (!id) return;
+      openPazarBidModal(id);
     });
+
     pazarBidGridBound = true;
   }
 
   function initPazarBidDialogBase() {
     if (pazarBidDialogBound) return;
     const dialog = $('#pazarBidDialog');
-    if (!dialog) return;
-    const closeBtn = $('#closePazarBid');
-    if (closeBtn) closeBtn.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('click', (evt) => {
-      if (evt.target === dialog) {
-        dialog.close();
-      }
-    });
+    if (dialog && typeof dialog.addEventListener === 'function') {
+      // Backdrop click closes
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog && typeof dialog.close === 'function') {
+          dialog.close();
+        }
+      });
+    }
     pazarBidDialogBound = true;
   }
 
   function buildPazarBidItemsHtml(listing) {
-    if (!listing.items || !listing.items.length) {
-      return '<div class="muted">Bu ilan için kalem bilgisi paylaşılmamış.</div>';
+    const items = listing && Array.isArray(listing.items) ? listing.items : [];
+    if (!items.length) {
+      return '<div class="muted">Bu ilanın teklif kalemleri bulunamadı.</div>';
     }
-    return listing.items.map(i => `
-      <div class="bid-item-row">
-        <label class="bid-item-label">
-          <input type="checkbox" class="bid-item-checkbox" value="${i.id}" />
-          <span>${i.categoryName}</span>
-        </label>
-        <span class="muted">${fmt.format(i.budget)} ₺</span>
-        <input type="number" class="input small bid-amount" data-for="${i.id}" placeholder="Teklif (₺)" disabled />
-      </div>
-    `).join('');
+
+    return items.map(i => {
+      const budget = (typeof i.budget === 'number') ? i.budget : parseFloat(i.budget);
+      const budgetText = Number.isFinite(budget) ? `${fmt.format(budget)} ₺` : '';
+      return `
+        <div class="bid-item-row">
+          <label class="bid-item-label">
+            <input type="checkbox" class="bid-item-checkbox" value="${i.id}" />
+            <span>${i.categoryName}</span>
+          </label>
+          <span class="muted">${budgetText}</span>
+          <input type="number" class="input small bid-amount" data-for="${i.id}" placeholder="Teklif (₺)" disabled />
+        </div>
+      `;
+    }).join('');
   }
 
   function buildPazarBidMarkup(listing) {
@@ -1212,10 +1612,12 @@
     }, 100);
   }
 
-  async function updatePazarMapAndPlaces(list, selectedCity = ''){
+  async function updatePazarMapAndPlaces(list, selectedCity = '', options = {}){
     const mapEl = $('#pazarMap');
     const placesEl = $('#pazarPlaces');
     if (!mapEl || !placesEl) return;
+
+    const skipPlacesPanel = !!(options && options.skipPlacesPanel);
 
     // Harita zaten varsa temizle, yoksa oluştur
     if (window.pazarMapInstance) {
@@ -1239,122 +1641,65 @@
     const map = initLeafletMap('pazarMap', defaultCenter, defaultZoom);
     window.pazarMapInstance = map;
 
-    placesEl.innerHTML = '';
+    if (!skipPlacesPanel) {
+      placesEl.innerHTML = '';
+    }
     const bounds = L.latLngBounds([]);
 
-    const mode = window.__pazarMode || 'places';
-    if (mode === 'listings') {
-      const validListings = Array.isArray(list) ? list : [];
-      const markerColor = 'var(--primary)';
+    // 1) İlan marker'ları (sağ paneli etkilemez)
+    const validListings = Array.isArray(list) ? list : [];
+    const listingMarkerColor = 'var(--primary)';
+    const listingWithCoords = validListings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number');
+    listingWithCoords.forEach(l => {
+      const marker = L.marker([l.latitude, l.longitude], {
+        opacity: 0.95,
+        icon: L.divIcon({
+          className: 'listing-marker',
+          html: `<div style="background-color:${listingMarkerColor};width:16px;height:16px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>`,
+          iconSize: [16, 16]
+        })
+      }).addTo(map);
 
-      const section = document.createElement('div');
-      section.className = 'pazar-listings-section';
+      const budgetText = typeof l.totalBudget === 'number' ? `${fmt.format(l.totalBudget)} ₺` : '';
+      marker.bindPopup(`
+        <div style="font-size:13px;min-width:180px;">
+          <strong>${l.title || 'İlan'}</strong><br>
+          <span class="muted" style="font-size:11px;">${l.location || ''}</span><br>
+          ${budgetText ? `<span style="font-size:12px;">${budgetText}</span>` : ''}
+        </div>
+      `);
 
-      if (!validListings.length) {
-        const empty = document.createElement('div');
-        empty.className = 'muted';
-        empty.style.marginBottom = '12px';
-        empty.textContent = 'Kriterlere uygun ilan bulunamadı.';
-        section.appendChild(empty);
-      } else {
-        const header = document.createElement('h4');
-        header.textContent = 'Haritadaki İlanlar';
-        header.style.margin = '0 0 8px';
-        section.appendChild(header);
-
-        const withCoords = validListings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number');
-        if (!withCoords.length) {
-          const info = document.createElement('div');
-          info.className = 'muted';
-          info.style.marginBottom = '12px';
-          info.textContent = 'Bu ilanlarda harita konumu paylaşılmamış.';
-          section.appendChild(info);
-        }
-
-        withCoords.forEach(l => {
-          const marker = L.marker([l.latitude, l.longitude], {
-            opacity: 0.95,
-            icon: L.divIcon({
-              className: 'listing-marker',
-              html: `<div style="background-color:${markerColor};width:16px;height:16px;border-radius:4px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>`,
-              iconSize: [16, 16]
-            })
-          }).addTo(map);
-
-          const budgetText = typeof l.totalBudget === 'number' ? `${fmt.format(l.totalBudget)} ₺` : '';
-          marker.bindPopup(`
-            <div style="font-size:13px;min-width:180px;">
-              <strong>${l.title || 'İlan'}</strong><br>
-              <span class="muted" style="font-size:11px;">${l.location || ''}</span><br>
-              ${budgetText ? `<span style="font-size:12px;">${budgetText}</span>` : ''}
-            </div>
-          `);
-
-          if (typeof l.radius === 'number' && l.radius > 0) {
-            L.circle([l.latitude, l.longitude], {
-              radius: l.radius,
-              color: markerColor,
-              fillColor: markerColor,
-              fillOpacity: 0.12,
-              weight: 2
-            }).addTo(map);
-          }
-
-          bounds.extend([l.latitude, l.longitude]);
-
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.style.padding = '12px';
-          card.style.marginBottom = '8px';
-          card.style.borderLeft = `3px solid ${markerColor}`;
-
-          const title = document.createElement('strong');
-          title.style.display = 'block';
-          title.style.fontSize = '14px';
-          title.textContent = l.title || 'İlan';
-          card.appendChild(title);
-
-          const meta = document.createElement('div');
-          meta.className = 'muted';
-          meta.style.fontSize = '12px';
-          meta.style.marginTop = '4px';
-          meta.textContent = l.location || 'Konum belirtilmedi';
-          card.appendChild(meta);
-
-          const bottom = document.createElement('div');
-          bottom.style.display = 'flex';
-          bottom.style.justifyContent = 'space-between';
-          bottom.style.alignItems = 'center';
-          bottom.style.gap = '10px';
-          bottom.style.marginTop = '8px';
-          bottom.innerHTML = `
-            <a class="btn small" href="/Listings/Detail?id=${l.id}" onclick="event.stopPropagation()">Detay</a>
-            ${budgetText ? `<span class="price" style="font-size:12px;">${budgetText}</span>` : ''}
-          `;
-          card.appendChild(bottom);
-
-          attachPlaceCardInteraction(card, map, marker);
-          section.appendChild(card);
-        });
+      if (typeof l.radius === 'number' && l.radius > 0) {
+        L.circle([l.latitude, l.longitude], {
+          radius: l.radius,
+          color: listingMarkerColor,
+          fillColor: listingMarkerColor,
+          fillOpacity: 0.12,
+          weight: 2
+        }).addTo(map);
       }
 
-      placesEl.appendChild(section);
+      bounds.extend([l.latitude, l.longitude]);
+    });
 
-      if (!selectedCity && bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.2));
-      }
-
-      return;
-    }
-
+    // 2) Mekanlar (sağ panel + mekan marker'ları)
+    const vendorPlacesProvided = !!(options && Object.prototype.hasOwnProperty.call(options, 'vendorPlaces'));
     let vendorPlaces = [];
-    try {
-      vendorPlaces = await api('/api/vendors/map');
-    } catch (err) {
-      console.error('Vendor places load error:', err);
+    if (vendorPlacesProvided) {
+      vendorPlaces = Array.isArray(options.vendorPlaces) ? options.vendorPlaces : [];
+    } else {
+      vendorPlaces = (window.__pazarVendors || []);
+      if (!Array.isArray(vendorPlaces) || vendorPlaces.length === 0) {
+        try {
+          vendorPlaces = await api('/api/vendors/map');
+        } catch (err) {
+          console.error('Vendor places load error:', err);
+          vendorPlaces = [];
+        }
+      }
     }
 
-    if (vendorPlaces && vendorPlaces.length) {
+    if (!skipPlacesPanel && vendorPlaces && vendorPlaces.length) {
       const section = document.createElement('div');
       section.className = 'pazar-vendor-section';
 
@@ -1364,6 +1709,7 @@
       section.appendChild(header);
 
       const markerColor = '#7b1fa2';
+      const canRate = role() === 'User' && !!token();
 
       vendorPlaces.forEach(v => {
         let marker = null;
@@ -1395,12 +1741,81 @@
         card.style.borderLeft = `3px solid ${markerColor}`;
         card.style.backgroundColor = '#f7f2fb';
 
+        if (v.coverPhotoUrl) {
+          const coverWrap = document.createElement('div');
+          coverWrap.className = 'pazar-vendor-cover';
+
+          const img = document.createElement('img');
+          img.className = 'pazar-vendor-cover-img';
+          img.src = v.coverPhotoUrl;
+          img.alt = `${v.companyName} fotoğrafı`;
+          img.loading = 'lazy';
+          coverWrap.appendChild(img);
+
+          card.appendChild(coverWrap);
+        }
+
         const title = document.createElement('strong');
         title.style.display = 'block';
         title.style.fontSize = '14px';
         title.style.color = markerColor;
         title.textContent = v.companyName;
         card.appendChild(title);
+
+        // Rating (average)
+        const avg = (typeof v.averageRating === 'number' && !Number.isNaN(v.averageRating))
+          ? v.averageRating
+          : null;
+        const count = (typeof v.ratingCount === 'number' && Number.isFinite(v.ratingCount))
+          ? v.ratingCount
+          : 0;
+
+        const ratingRow = document.createElement('div');
+        ratingRow.className = 'vendor-rating-row';
+
+        const stars = document.createElement('span');
+        stars.className = 'rating-stars';
+        const percent = avg ? Math.max(0, Math.min(100, (avg / 5) * 100)) : 0;
+        stars.style.setProperty('--percent', `${percent}%`);
+        if (avg && avg >= 4.999) {
+          stars.classList.add('is-perfect');
+        }
+        stars.setAttribute('aria-label', avg ? `${avg.toFixed(1)} / 5` : 'Değerlendirme yok');
+        ratingRow.appendChild(stars);
+
+        const ratingText = document.createElement('span');
+        ratingText.className = 'muted vendor-rating-text';
+        ratingText.textContent = avg ? `${avg.toFixed(1)} (${count})` : '—';
+        ratingRow.appendChild(ratingText);
+
+        if (canRate) {
+          stars.classList.add('rating-actionable');
+          stars.title = 'Değerlendir (1-5)';
+          stars.addEventListener('click', async (e) => {
+            try {
+              const rect = stars.getBoundingClientRect();
+              const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
+              const clicked = Math.ceil((x / rect.width) * 5);
+              const payload = { rating: clicked };
+              const res = await api(`/api/vendors/${v.userId}/rating`, { method: 'POST', body: JSON.stringify(payload) });
+              const newAvg = (res && typeof res.averageRating === 'number') ? res.averageRating : null;
+              const newCount = (res && typeof res.ratingCount === 'number') ? res.ratingCount : count;
+              const newPercent = newAvg ? Math.max(0, Math.min(100, (newAvg / 5) * 100)) : 0;
+              stars.style.setProperty('--percent', `${newPercent}%`);
+              if (newAvg && newAvg >= 4.999) {
+                stars.classList.add('is-perfect');
+              } else {
+                stars.classList.remove('is-perfect');
+              }
+              ratingText.textContent = newAvg ? `${newAvg.toFixed(1)} (${newCount})` : '—';
+            } catch (err) {
+              console.error('Rating submit error:', err);
+              alert('Değerlendirme kaydedilemedi. Lütfen tekrar deneyin.');
+            }
+          });
+        }
+
+        card.appendChild(ratingRow);
 
         if (v.addressLabel) {
           const addr = document.createElement('div');
@@ -1461,14 +1876,6 @@
           meta.appendChild(price);
         }
 
-        if (v.phoneNumber) {
-          const phone = document.createElement('div');
-          phone.className = 'muted';
-          phone.style.fontSize = '11px';
-          phone.textContent = `Tel: ${v.phoneNumber}`;
-          meta.appendChild(phone);
-        }
-
         if (v.website) {
           const link = document.createElement('a');
           link.href = v.website;
@@ -1487,11 +1894,18 @@
           attachPlaceCardInteraction(card, map, marker);
         }
 
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.justifyContent = 'flex-end';
+        actions.style.marginTop = '10px';
+        actions.innerHTML = `<a class="btn small primary" href="/Mekan/${v.userId}" onclick="event.stopPropagation()">Ziyaret Et</a>`;
+        card.appendChild(actions);
+
         section.appendChild(card);
       });
 
       placesEl.appendChild(section);
-    } else {
+    } else if (!skipPlacesPanel) {
       const empty = document.createElement('div');
       empty.className = 'muted';
       empty.style.marginBottom = '12px';
@@ -1499,8 +1913,12 @@
       placesEl.appendChild(empty);
     }
 
+    if (!selectedCity && bounds.isValid()) {
+      map.fitBounds(bounds.pad(0.2));
+    }
+
     // Google Places mekanlarını yükle (sadece Ankara veya şehir seçilmemişse Gölbaşı mekanlarını göster)
-    if (!selectedCity || selectedCity === 'Ankara') {
+    if (!skipPlacesPanel && (!selectedCity || selectedCity === 'Ankara')) {
       await loadGooglePlacesForGolbasi(map, placesEl, bounds);
     }
 
@@ -1585,23 +2003,22 @@
     florist: { color: '#fbbc04', bg: '#fffdf5', label: '🌸 Çiçekçi', icon: '💐' }
   };
 
-  // Google Places API - Ankara/Gölbaşı mekanlarını yükle (yorum satırı - gerektiğinde açılabilir)
+  // Ankara/Gölbaşı mekanlarını yükle (sabit veri + yerel görseller)
   async function loadGooglePlacesForGolbasi(map, placesContainer, bounds) {
-    // API çağrısı kapalı - sabit veri kullanılıyor
     try {
-      const datasets = [
-        { key: 'wedding', places: GOLBASI_PLACES },
-        { key: 'photographer', places: PHOTOGRAPHERS },
-        { key: 'bakery', places: BAKERIES },
-        { key: 'florist', places: FLORISTS }
+      const resolved = [
+        { key: 'wedding', places: Array.isArray(GOLBASI_PLACES) ? GOLBASI_PLACES : [] },
+        { key: 'photographer', places: Array.isArray(PHOTOGRAPHERS) ? PHOTOGRAPHERS : [] },
+        { key: 'bakery', places: Array.isArray(BAKERIES) ? BAKERIES : [] },
+        { key: 'florist', places: Array.isArray(FLORISTS) ? FLORISTS : [] }
       ];
-      const allPlaces = datasets.flatMap(d => d.places);
-      console.log(`Google Places: ${allPlaces.length} mekan yüklendi (${GOLBASI_PLACES.length} düğün salonu, ${PHOTOGRAPHERS.length} fotoğrafçı, ${BAKERIES.length} pastane, ${FLORISTS.length} çiçekçi)`);
+
+      const allPlaces = resolved.flatMap(d => d.places);
+      console.log(`Yerel mekan listesi: ${allPlaces.length} mekan yüklendi`);
 
       const placesEl = placesContainer || $('#pazarPlaces');
       const placeCards = [];
       const placeMarkers = [];
-      const summaryButtons = [];
       let activeCategoryFilter = null;
 
       const applyCategoryFilter = (category) => {
@@ -1614,35 +2031,13 @@
             marker.setOpacity(shouldDim ? 0.25 : 0.85);
           }
         });
-        summaryButtons.forEach(({ key, btn }) => {
-          const color = (CATEGORY_COLORS[key] && CATEGORY_COLORS[key].color) || '#cccccc';
-          const isActive = category === key;
-          btn.dataset.active = isActive ? 'true' : 'false';
-          btn.style.borderColor = isActive ? color : 'transparent';
-          btn.style.boxShadow = isActive ? `0 0 0 1px ${color}` : '0 1px 3px rgba(0,0,0,0.08)';
-          btn.style.opacity = category && !isActive ? 0.6 : 1;
-        });
       };
 
       let section = null;
-      let summaryGrid = null;
       let listsWrapper = null;
       if (placesEl) {
         section = document.createElement('div');
         section.className = 'pazar-google-section';
-
-        const header = document.createElement('h4');
-        header.textContent = 'Popüler Mekanlar (Google)';
-        header.style.margin = '12px 0 8px';
-        section.appendChild(header);
-
-        summaryGrid = document.createElement('div');
-        summaryGrid.className = 'pazar-google-summary';
-        summaryGrid.style.display = 'grid';
-        summaryGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
-        summaryGrid.style.gap = '10px';
-        summaryGrid.style.marginBottom = '12px';
-        section.appendChild(summaryGrid);
 
         listsWrapper = document.createElement('div');
         listsWrapper.className = 'pazar-google-categories';
@@ -1652,43 +2047,9 @@
         section.appendChild(listsWrapper);
       }
 
-      datasets.forEach(dataset => {
+      resolved.forEach(dataset => {
         const catStyle = CATEGORY_COLORS[dataset.key];
         if (!catStyle || !dataset.places.length) return;
-
-        if (summaryGrid) {
-          const summaryBtn = document.createElement('button');
-          summaryBtn.type = 'button';
-          summaryBtn.className = 'pazar-google-summary__card';
-          summaryBtn.style.display = 'flex';
-          summaryBtn.style.flexDirection = 'column';
-          summaryBtn.style.alignItems = 'flex-start';
-          summaryBtn.style.padding = '12px';
-          summaryBtn.style.borderRadius = '12px';
-          summaryBtn.style.border = '1px solid transparent';
-          summaryBtn.style.background = catStyle.bg;
-          summaryBtn.style.color = catStyle.color;
-          summaryBtn.style.fontWeight = '600';
-          summaryBtn.style.cursor = 'pointer';
-          summaryBtn.style.transition = 'all 0.2s ease';
-          summaryBtn.innerHTML = `
-            <span style="font-size:22px;">${catStyle.icon}</span>
-            <span style="font-size:15px; margin-top:4px;">${catStyle.label}</span>
-            <span style="font-size:12px; color:#333; margin-top:2px;">${dataset.places.length} mekan</span>
-          `;
-          summaryBtn.addEventListener('click', () => {
-            activeCategoryFilter = activeCategoryFilter === dataset.key ? null : dataset.key;
-            applyCategoryFilter(activeCategoryFilter);
-            if (activeCategoryFilter) {
-              const targetMarker = placeMarkers.find(entry => entry.category === activeCategoryFilter);
-              if (targetMarker) {
-                flyToMarker(map, targetMarker.marker);
-              }
-            }
-          });
-          summaryButtons.push({ key: dataset.key, btn: summaryBtn });
-          summaryGrid.appendChild(summaryBtn);
-        }
 
         let categoryBlock = null;
         if (listsWrapper) {
@@ -1746,11 +2107,20 @@
             card.style.backgroundColor = catStyle.bg;
             card.style.borderLeft = `3px solid ${catStyle.color}`;
             card.dataset.category = dataset.key;
+
             card.innerHTML = `
               <strong style="font-size:14px; color:${catStyle.color};">${catStyle.icon} ${place.name}</strong>
               <div class="muted" style="font-size:12px; margin-top:4px;">${place.address || 'Adres bilgisi yok'}</div>
               <div style="font-size:10px; margin-top:4px; color:${catStyle.color};">Gölbaşı / Ankara</div>
             `;
+
+            const photoEl = createCategoryImageElement(dataset.key, place.photoReference, 640, 360, '', place.name);
+            photoEl.style.width = '100%';
+            photoEl.style.height = '120px';
+            photoEl.style.objectFit = 'cover';
+            photoEl.style.borderRadius = '10px';
+            photoEl.style.marginBottom = '8px';
+            card.insertBefore(photoEl, card.firstChild);
             attachPlaceCardInteraction(card, map, marker);
             categoryBlock.appendChild(card);
             placeCards.push(card);
@@ -1773,9 +2143,123 @@
     setAuthUI();
     initPazarBidDialogBase();
 
+    // /home - Mekan görselleri akışı (hata alsa bile diğer init'lerden bağımsız çalışsın)
+    if ($('#homeVenueTrack')) {
+      initHomeVenueStream().catch(err => {
+        console.warn('initHomeVenueStream başarısız:', err);
+        const track = $('#homeVenueTrack');
+        if (track && !track.querySelector('img')) {
+          track.innerHTML = '<div class="muted" style="padding:12px;">Şu an mekan görselleri yüklenemedi.</div>';
+        }
+      });
+    }
+
+    // Navbar: hide on scroll down, show on scroll up
+    const topbar = document.querySelector('.topbar');
+    if (topbar) {
+      let lastY = window.scrollY || 0;
+      let ticking = false;
+      const threshold = 10;
+      const minShowAt = 8;
+
+      const update = () => {
+        const y = window.scrollY || 0;
+        const delta = y - lastY;
+
+        if (y <= minShowAt) {
+          topbar.classList.remove('is-hidden');
+        } else if (Math.abs(delta) >= threshold) {
+          if (delta > 0) topbar.classList.add('is-hidden');
+          else topbar.classList.remove('is-hidden');
+        }
+
+        lastY = y;
+        ticking = false;
+      };
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(update);
+          ticking = true;
+        }
+      }, { passive: true });
+    }
+
+    // /home hero: şehir seç + listele
+    const homeServiceBtn = $('#homeServiceSelectBtn');
+    const homeServiceMenu = $('#homeServiceMenu');
+    const homeCityBtn = $('#homeCitySelectBtn');
+    const homeCityMenu = $('#homeCityMenu');
+    const homeListBtn = $('#homeListBtn');
+    if (homeServiceBtn && homeServiceMenu && homeCityBtn && homeCityMenu && homeListBtn) {
+      const HOME_SERVICES = [
+        'Evlilik Teklifi',
+        'Düğün',
+        'Nişan',
+        'Kına',
+        'Doğum Günü',
+        'Kurumsal Etkinlik'
+      ];
+
+      const closeAllHomeMenus = () => {
+        homeServiceMenu.classList.remove('open');
+        homeCityMenu.classList.remove('open');
+        homeServiceBtn.setAttribute('aria-expanded', 'false');
+        homeCityBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      const initHomeDropdown = (buttonEl, menuEl, options) => {
+        buttonEl.dataset.value = '';
+        menuEl.innerHTML = options
+          .map(v => `<button type="button" class="home-hero-option" role="option" data-value="${String(v).replace(/"/g, '&quot;')}">${v}</button>`)
+          .join('');
+
+        buttonEl.addEventListener('click', (e) => {
+          e.preventDefault();
+          const isOpen = menuEl.classList.contains('open');
+          closeAllHomeMenus();
+          if (!isOpen) {
+            menuEl.classList.add('open');
+            buttonEl.setAttribute('aria-expanded', 'true');
+          }
+        });
+
+        menuEl.addEventListener('click', (e) => {
+          const target = e.target && e.target.closest ? e.target.closest('.home-hero-option') : null;
+          if (!target) return;
+          const value = (target.getAttribute('data-value') || '').trim();
+          buttonEl.dataset.value = value;
+          buttonEl.textContent = value || 'Seçin';
+          closeAllHomeMenus();
+        });
+      };
+
+      initHomeDropdown(homeServiceBtn, homeServiceMenu, HOME_SERVICES);
+      initHomeDropdown(homeCityBtn, homeCityMenu, TR_LOCATIONS);
+
+      document.addEventListener('click', (e) => {
+        const clickedInside = e.target && e.target.closest && e.target.closest('.home-hero-field');
+        if (!clickedInside) closeAllHomeMenus();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllHomeMenus();
+      });
+
+      homeListBtn.addEventListener('click', () => {
+        const service = (homeServiceBtn.dataset.value || '').trim();
+        const city = (homeCityBtn.dataset.value || '').trim();
+        const params = new URLSearchParams();
+        if (service) params.set('q', service);
+        if (city) params.set('location', city);
+        const target = '/Marketplace' + (params.toString() ? `?${params.toString()}` : '');
+        window.location.href = target;
+      });
+    }
+
     // logout
     const logout = $('#logoutBtn');
-    if (logout) logout.addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+    if (logout) logout.addEventListener('click', () => { localStorage.clear(); window.location.href = '/home'; });
 
     // Index - Homepage carousel (filtre olmadan)
     if ($('#listingCarousel')) {
@@ -1784,32 +2268,111 @@
       // Live stats sayaç animasyonu
       initLiveStatsCounter();
     }
+
+    // /home - Aktif ilan akışı
+    if ($('#homeListingTrack')) {
+      await initHomeListingsStream();
+    }
     
     // Pazar Alanı sayfası
     if ($('#pazarListingGrid')) {
       ensurePazarBidButtonBinding();
-      await loadCategories($('#category'));
-      const locSelect = $('#location');
-      if (locSelect) {
-        locSelect.innerHTML = '<option value="">Konum (hepsi)</option>' +
+
+      const listingCat = $('#pazarListingCategory');
+      if (listingCat) await loadCategories(listingCat);
+
+      const purposeSel = $('#pazarServicePurpose');
+      if (purposeSel) loadEventPurposes(purposeSel, 'Ne için? (hepsi)');
+
+      const serviceCatSel = $('#pazarServiceCategory');
+      if (serviceCatSel) await loadCategoriesAsNames(serviceCatSel, 'Kategori (hepsi)');
+
+      const listingLoc = $('#pazarListingLocation');
+      if (listingLoc) {
+        listingLoc.innerHTML = '<option value="">Konum (hepsi)</option>' +
           TR_LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('');
       }
-      bindPazarModeToggle();
-      $('#searchBtnPazar').addEventListener('click', searchPazar);
-      await searchPazar();
+
+      const serviceLoc = $('#pazarServiceLocation');
+      if (serviceLoc) {
+        serviceLoc.innerHTML = '<option value="">Konum (hepsi)</option>' +
+          TR_LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('');
+      }
+
+      // QueryString -> ilan konumu prefill
+      const qs = new URLSearchParams(window.location.search);
+      const qsLocation = (qs.get('location') || '').trim();
+      if (qsLocation && listingLoc) {
+        listingLoc.value = qsLocation;
+      }
+
+      bindPazarTypeToggle();
+      const searchBtn = $('#searchBtnPazar');
+      if (searchBtn) searchBtn.addEventListener('click', () => searchPazarDispatch());
+
+      const showAllBtn = $('#showAllBtnPazar');
+      if (showAllBtn) showAllBtn.addEventListener('click', () => showAllPazar());
+
+      setPazarSearchType(window.__pazarSearchType || 'ilan');
+      await showAllPazar();
 
       const listingsPanel = document.getElementById('pazarListingsPanel');
       const toggleBtn = document.getElementById('pazarListingsToggle');
+      const placesPanel = document.getElementById('pazarPlacesPanel');
+      const placesToggleBtn = document.getElementById('pazarPlacesToggle');
       const layoutSection = document.querySelector('.pazar-layout');
       if (listingsPanel && toggleBtn) {
         toggleBtn.addEventListener('click', () => {
+          // If places panel is expanded, collapse it first
+          if (layoutSection) {
+            layoutSection.classList.remove('expanded-places-hidden-map');
+          }
+          if (placesToggleBtn) {
+            placesToggleBtn.textContent = '← Geniş Görünüm';
+          }
+
           const expanded = listingsPanel.classList.toggle('pazar-listings-expanded');
           if (layoutSection) {
             layoutSection.classList.toggle('expanded-map-hidden', expanded);
           }
-          toggleBtn.textContent = expanded ? 'Dar Görünüm' : 'Geniş Görünüm';
+          toggleBtn.textContent = expanded ? '← Dar Görünüm' : 'Geniş Görünüm →';
         });
       }
+
+      if (placesPanel && placesToggleBtn && layoutSection) {
+        placesToggleBtn.addEventListener('click', () => {
+          // If listings panel is expanded, collapse it first
+          listingsPanel.classList.remove('pazar-listings-expanded');
+          layoutSection.classList.remove('expanded-map-hidden');
+          if (toggleBtn) toggleBtn.textContent = 'Geniş Görünüm →';
+
+          const expanded = layoutSection.classList.toggle('expanded-places-hidden-map');
+          placesToggleBtn.textContent = expanded ? 'Dar Görünüm →' : '← Geniş Görünüm';
+        });
+      }
+    }
+
+    // Marketplace sayfası
+    if ($('#marketplaceGrid')) {
+      await loadCategories($('#category'));
+
+      const qs = new URLSearchParams(window.location.search);
+      const qParam = (qs.get('q') || '').trim();
+      const locationParam = (qs.get('location') || '').trim();
+      const categoryIdParam = (qs.get('categoryId') || '').trim();
+      const minBudgetParam = (qs.get('minBudget') || '').trim();
+      const maxBudgetParam = (qs.get('maxBudget') || '').trim();
+
+      if ($('#q') && qParam) $('#q').value = qParam;
+      if ($('#location') && locationParam) $('#location').value = locationParam;
+      if ($('#category') && categoryIdParam) $('#category').value = categoryIdParam;
+      if ($('#minBudget') && minBudgetParam) $('#minBudget').value = minBudgetParam;
+      if ($('#maxBudget') && maxBudgetParam) $('#maxBudget').value = maxBudgetParam;
+
+      const btn = $('#searchBtnMarketplace');
+      if (btn) btn.addEventListener('click', searchMarketplace);
+
+      await searchMarketplace();
     }
 
     // Login
@@ -2052,11 +2615,14 @@
     }
 
     // Vendor dashboard
-    if ($('#openListings')) {
+    if ($('#vendorProfileForm')) {
       if (!(await ensureAuth('Vendor'))) return;
-      loadOpen = async function(){
-        const list = await api('/api/listings');
-        $('#openListings').innerHTML = list.map(l => {
+
+      const openListingsEl = $('#openListings');
+      if (openListingsEl) {
+        loadOpen = async function(){
+          const list = await api('/api/listings');
+          openListingsEl.innerHTML = list.map(l => {
           // Generate checkboxes for items
           const itemsCheckboxes = l.items.map(i => `
             <div class="row center gap" style="margin-bottom:4px">
@@ -2159,14 +2725,21 @@
           vendorDashboardFocusListingId = null;
           clearVendorDashboardQueryParams();
         }
-      };
+        };
+      } else {
+        loadOpen = null;
+      }
 
       loadMyBids = async function(){
+        const myBidsEl = $('#myBids');
+        if (!myBidsEl) return;
         const bids = await api('/api/bids/mine');
-        $('#myBids').innerHTML = bids.map(bidCard).join('');
+        myBidsEl.innerHTML = bids.map(bidCard).join('');
       };
 
-      await loadOpen();
+      if (typeof loadOpen === 'function') {
+        await loadOpen();
+      }
       await loadMyBids();
     }
 
@@ -2495,11 +3068,7 @@
           if (targetTab) targetTab.classList.add('active');
 
           // Load data for the tab
-          if (tabName === 'listings') {
-            if (typeof loadOpen === 'function') {
-              loadOpen();
-            }
-          } else if (tabName === 'bids') {
+          if (tabName === 'bids') {
             if (typeof loadMyBids === 'function') {
               loadMyBids();
             }
@@ -2529,10 +3098,14 @@
       bindVendorTabs();
 
       if (vendorDashboardInitialTab && vendorDashboardInitialTab !== 'profile') {
+        const initialTab = vendorDashboardInitialTab === 'listings' ? 'reviews' : vendorDashboardInitialTab;
         setTimeout(() => {
-          const targetBtn = document.querySelector(`.tab-btn[data-tab="${vendorDashboardInitialTab}"]`);
+          const targetBtn = document.querySelector(`.tab-btn[data-tab="${initialTab}"]`);
           if (targetBtn && !targetBtn.classList.contains('active')) {
             targetBtn.click();
+          }
+          if (vendorDashboardFocusListingId && initialTab !== 'listings') {
+            vendorDashboardFocusListingId = null;
           }
           if (!vendorDashboardFocusListingId) {
             clearVendorDashboardQueryParams();
@@ -2542,6 +3115,7 @@
 
       try {
         console.log('Vendor Dashboard başlatılıyor...');
+        renderVendorSuitableForOptions();
         await loadVendorCategories();
         console.log('Kategoriler yüklendi');
         await loadVendorProfile();
@@ -2702,6 +3276,46 @@
         $('input[name="amenities"]').value = selected.join(',');
       }
 
+      function updateSuitableForInput() {
+        const form = $('#vendorProfileForm');
+        if (!form || !form.suitableForCsv) return;
+        const checkboxes = $$('input[name="suitableFor"]:checked');
+        const selected = Array.from(checkboxes).map(cb => cb.value);
+        form.suitableForCsv.value = selected.join(',');
+
+        const allToggle = $('#suitableForAll');
+        if (allToggle) {
+          allToggle.checked = EVENT_PURPOSE_OPTIONS.length > 0 && EVENT_PURPOSE_OPTIONS.every(v => selected.includes(v));
+        }
+      }
+
+      function renderVendorSuitableForOptions() {
+        const grid = $('#suitableForGrid');
+        if (!grid) return;
+        if (grid.dataset.suitableForInit === '1') return;
+
+        // Keep the existing "Hepsi" item, inject the rest
+        EVENT_PURPOSE_OPTIONS.forEach(p => {
+          const label = document.createElement('label');
+          label.className = 'amenity-item';
+          label.dataset.suitableFor = '1';
+
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.name = 'suitableFor';
+          input.value = p;
+
+          const span = document.createElement('span');
+          span.textContent = p;
+
+          label.appendChild(input);
+          label.appendChild(span);
+          grid.appendChild(label);
+        });
+
+        grid.dataset.suitableForInit = '1';
+      }
+
       function parsePhotoUrls(raw) {
         if (!raw) return [];
         const trimmed = raw.trim();
@@ -2829,6 +3443,23 @@
             });
             updateAmenitiesInput();
           }
+
+          // SuitableFor (Hangi etkinlik için uygun?)
+          if (form.suitableForCsv) {
+            form.suitableForCsv.value = profile.suitableForCsv || '';
+          }
+          if (profile.suitableForCsv) {
+            const selected = profile.suitableForCsv
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean);
+            $$('input[name="suitableFor"]').forEach(cb => {
+              cb.checked = selected.includes(cb.value);
+            });
+          } else {
+            $$('input[name="suitableFor"]').forEach(cb => { cb.checked = false; });
+          }
+          updateSuitableForInput();
           
           // Social media
           if (profile.socialMediaLinks) {
@@ -2870,6 +3501,19 @@
           cb.addEventListener('change', updateAmenitiesInput);
         });
 
+        const suitableAll = $('#suitableForAll');
+        if (suitableAll) {
+          suitableAll.addEventListener('change', () => {
+            const shouldCheck = suitableAll.checked;
+            $$('input[name="suitableFor"]').forEach(cb => { cb.checked = shouldCheck; });
+            updateSuitableForInput();
+          });
+        }
+
+        $$('input[name="suitableFor"]').forEach(cb => {
+          cb.addEventListener('change', updateSuitableForInput);
+        });
+
         const addPhotoBtn = $('#addPhotoBtn');
         const photoFileInput = $('#photoFileInput');
         const photoPreviewGrid = $('#photoPreviewGrid');
@@ -2901,7 +3545,7 @@
           });
         }
 
-        if (photoTextarea) {
+        if (photoTextarea && photoTextarea.tagName === 'TEXTAREA') {
           photoTextarea.addEventListener('input', () => {
             renderPhotoPreview(getPhotoUrlList());
           });
@@ -2950,6 +3594,7 @@
             venueType: form.venueType.value || null,
             capacity: form.capacity.value ? parseInt(form.capacity.value) : null,
             amenities: form.amenities.value || null,
+            suitableForCsv: (form.suitableForCsv?.value || '').trim() || null,
             priceRange: form.priceRange.value.trim() || null,
             phoneNumber: form.phoneNumber.value.trim() || null,
             website: form.website.value.trim() || null,
@@ -3040,6 +3685,523 @@
         const statusEl = $('#profileStatus');
         if (statusEl) {
           statusEl.style.display = 'none';
+        }
+      }
+
+      // Public Vendor Detail (Mekan) page
+      const vendorPublicRoot = $('#vendorPublicRoot');
+      if (vendorPublicRoot) {
+        const vendorUserId = vendorPublicRoot.getAttribute('data-vendor-user-id');
+        const titleEl = $('#vendorPublicTitle');
+        const subtitleEl = $('#vendorPublicSubtitle');
+        const cardEl = $('#vendorPublicCard');
+        const headerRatingEl = $('#vendorPublicHeaderRating');
+        const headerActionsEl = $('#vendorPublicHeaderActions');
+
+        function setInlineStatus(el, text) {
+          if (!el) return;
+          el.textContent = text || '';
+          el.style.display = text ? 'block' : 'none';
+        }
+
+        function renderReviews(list) {
+          const root = $('#vendorReviewsList');
+          if (!root) return;
+          root.innerHTML = '';
+
+          if (!Array.isArray(list) || list.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'muted';
+            empty.textContent = 'Henüz yorum yok.';
+            root.appendChild(empty);
+            return;
+          }
+
+          list.forEach(r => {
+            const item = document.createElement('div');
+            item.className = 'vendor-public-item';
+
+            const header = document.createElement('div');
+            header.className = 'vendor-public-item-header';
+
+            const who = document.createElement('div');
+            who.className = 'vendor-public-item-who';
+            who.textContent = r.userDisplayName || 'Kullanıcı';
+
+            const when = document.createElement('div');
+            when.className = 'muted vendor-public-item-when';
+            const dt = r.updatedAtUtc || r.createdAtUtc;
+            when.textContent = dt ? new Date(dt).toLocaleString('tr-TR') : '';
+
+            header.appendChild(who);
+            header.appendChild(when);
+
+            const body = document.createElement('div');
+            body.className = 'vendor-public-item-body';
+            body.textContent = r.comment || '';
+
+            item.appendChild(header);
+            item.appendChild(body);
+            root.appendChild(item);
+          });
+        }
+
+        function renderQuestions(list) {
+          const root = $('#vendorQuestionsList');
+          if (!root) return;
+          root.innerHTML = '';
+
+          if (!Array.isArray(list) || list.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'muted';
+            empty.textContent = 'Henüz soru yok.';
+            root.appendChild(empty);
+            return;
+          }
+
+          list.forEach(q => {
+            const item = document.createElement('div');
+            item.className = 'vendor-public-item';
+
+            const header = document.createElement('div');
+            header.className = 'vendor-public-item-header';
+
+            const who = document.createElement('div');
+            who.className = 'vendor-public-item-who';
+            who.textContent = q.userDisplayName || 'Kullanıcı';
+
+            const when = document.createElement('div');
+            when.className = 'muted vendor-public-item-when';
+            when.textContent = q.createdAtUtc ? new Date(q.createdAtUtc).toLocaleString('tr-TR') : '';
+
+            header.appendChild(who);
+            header.appendChild(when);
+
+            const question = document.createElement('div');
+            question.className = 'vendor-public-item-body';
+            question.textContent = q.question || '';
+
+            const answerWrap = document.createElement('div');
+            answerWrap.className = 'vendor-public-answer';
+            if (q.answer) {
+              answerWrap.textContent = `Yanıt: ${q.answer}`;
+            } else {
+              answerWrap.className = 'muted vendor-public-answer';
+              answerWrap.textContent = 'Yanıt bekleniyor.';
+            }
+
+            item.appendChild(header);
+            item.appendChild(question);
+            item.appendChild(answerWrap);
+            root.appendChild(item);
+          });
+        }
+
+        async function loadReviews() {
+          setInlineStatus($('#vendorReviewsStatus'), 'Yorumlar yükleniyor...');
+          try {
+            const list = await api(`/api/vendors/${vendorUserId}/reviews`);
+            renderReviews(list);
+            setInlineStatus($('#vendorReviewsStatus'), '');
+          } catch (err) {
+            console.error('Reviews load error:', err);
+            setInlineStatus($('#vendorReviewsStatus'), err.message || 'Yorumlar yüklenemedi.');
+          }
+        }
+
+        async function loadQuestions() {
+          setInlineStatus($('#vendorQuestionsStatus'), 'Sorular yükleniyor...');
+          try {
+            const list = await api(`/api/vendors/${vendorUserId}/questions`);
+            renderQuestions(list);
+            setInlineStatus($('#vendorQuestionsStatus'), '');
+          } catch (err) {
+            console.error('Questions load error:', err);
+            setInlineStatus($('#vendorQuestionsStatus'), err.message || 'Sorular yüklenemedi.');
+          }
+        }
+
+        try {
+          if (!vendorUserId) throw new Error('Mekan kimliği bulunamadı.');
+          const v = await api(`/api/vendors/${vendorUserId}`);
+
+          if (titleEl) titleEl.textContent = v.companyName || 'Mekan';
+          if (subtitleEl) {
+            const addr = v.addressLabel ? ` • ${v.addressLabel}` : '';
+            subtitleEl.textContent = (v.isVerified ? 'Onaylı Mekan' : 'Mekan') + addr;
+          }
+
+          const avg = (typeof v.averageRating === 'number' && !Number.isNaN(v.averageRating)) ? v.averageRating : null;
+          const count = (typeof v.ratingCount === 'number' && Number.isFinite(v.ratingCount)) ? v.ratingCount : 0;
+          const percent = avg ? Math.max(0, Math.min(100, (avg / 5) * 100)) : 0;
+          const perfectClass = (avg && avg >= 4.999) ? 'is-perfect' : '';
+
+          // Header actions (Soru Sor / Ara)
+          if (headerActionsEl) {
+            headerActionsEl.innerHTML = '';
+
+            const askBtn = document.createElement('button');
+            askBtn.type = 'button';
+            askBtn.className = 'btn small danger';
+            askBtn.textContent = 'Soru Sor';
+            askBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              const target = document.getElementById('vendorQuestionsSection') || document.getElementById('vendorQuestionComposer');
+              if (target && typeof target.scrollIntoView === 'function') {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            });
+            headerActionsEl.appendChild(askBtn);
+
+            const phone = v.phoneNumber ? String(v.phoneNumber).trim() : '';
+            if (phone) {
+              const callBtn = document.createElement('button');
+              callBtn.type = 'button';
+              callBtn.className = 'btn small danger';
+              callBtn.textContent = 'Ara';
+
+              const tel = phone.replace(/\s+/g, '');
+
+              const popup = document.createElement('div');
+              popup.className = 'vendor-public-phone-pop';
+              popup.style.display = 'none';
+              popup.innerHTML = `
+                <div class="vendor-public-phone-pop-inner">
+                  <div class="vendor-public-phone-row">
+                    <div class="vendor-public-phone-number">${phone}</div>
+                    <a class="btn small danger" href="tel:${tel}">Ara</a>
+                  </div>
+                </div>
+              `;
+
+              function closePopup() {
+                popup.style.display = 'none';
+              }
+
+              function togglePopup() {
+                popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
+              }
+
+              callBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePopup();
+              });
+
+              // Close on outside click
+              document.addEventListener('click', (e) => {
+                if (popup.style.display === 'none') return;
+                const t = e.target;
+                if (t === callBtn || popup.contains(t)) return;
+                closePopup();
+              });
+
+              headerActionsEl.appendChild(callBtn);
+              headerActionsEl.appendChild(popup);
+            }
+          }
+
+          if (headerRatingEl) {
+            headerRatingEl.innerHTML = '';
+            if (avg) {
+              const stars = document.createElement('span');
+              stars.className = `rating-stars ${perfectClass}`;
+              stars.style.setProperty('--percent', `${percent}%`);
+              stars.setAttribute('aria-label', `${avg.toFixed(1)} / 5`);
+
+              const text = document.createElement('span');
+              text.className = 'muted vendor-rating-text';
+              text.textContent = `${avg.toFixed(1)} (${count})`;
+
+              headerRatingEl.appendChild(stars);
+              headerRatingEl.appendChild(text);
+              headerRatingEl.style.display = 'flex';
+            } else {
+              headerRatingEl.style.display = 'none';
+            }
+          }
+
+          const categories = Array.isArray(v.serviceCategories) ? v.serviceCategories : [];
+          const photoUrls = (typeof v.photoUrls === 'string' ? v.photoUrls : '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+          const catsHtml = categories.length
+            ? categories.map(c => `<span class="badge" style="margin-right:6px;margin-bottom:6px">${c}</span>`).join('')
+            : '<span class="muted">Kategori belirtilmemiş.</span>';
+
+          const photosHtml = photoUrls.length
+            ? (() => {
+                const hero = photoUrls[0];
+                const hasNav = photoUrls.length > 1;
+                const thumbs = photoUrls.slice(0, 9);
+                const thumbsHtml = thumbs.length > 1
+                  ? `<div class="vendor-public-thumbs">
+                      ${thumbs.map((url, idx) => `
+                        <button type="button" class="vendor-public-thumb" data-thumb-index="${idx}" aria-label="Fotoğraf ${idx + 1}">
+                          <img src="${url}" alt="Mekan fotoğrafı" loading="lazy" />
+                        </button>
+                      `).join('')}
+                    </div>`
+                  : '';
+                return `
+                  <div class="vendor-public-gallery" data-photo-count="${photoUrls.length}">
+                    <div class="vendor-public-hero-wrap">
+                      <a href="${hero}" target="_blank" rel="noopener" class="vendor-public-hero-link" aria-label="Fotoğrafı büyüt">
+                        <img id="vendorPublicHeroImg" src="${hero}" alt="Mekan fotoğrafı" />
+                      </a>
+                      ${hasNav ? `
+                        <button type="button" class="vendor-public-hero-btn is-prev" data-hero-prev aria-label="Önceki fotoğraf">‹</button>
+                        <button type="button" class="vendor-public-hero-btn is-next" data-hero-next aria-label="Sonraki fotoğraf">›</button>
+                      ` : ''}
+                    </div>
+                    ${thumbsHtml}
+                  </div>
+                `;
+              })()
+            : '';
+
+          const webHtml = v.website
+            ? `<div style="margin-top:10px;"><a class="btn small" href="${v.website}" target="_blank" rel="noopener">Web Sitesi</a></div>`
+            : '';
+
+          if (cardEl) {
+            cardEl.innerHTML = `
+              ${photosHtml}
+
+              ${v.description ? `<p class="muted" style="margin-top:12px;">${v.description}</p>` : '<p class="muted" style="margin-top:12px;">Açıklama eklenmemiş.</p>'}
+
+              <div style="margin-top:12px;">${catsHtml}</div>
+
+              <div class="row gap wrap" style="margin-top:12px;">
+                ${v.venueType ? `<span class="badge">${v.venueType}</span>` : ''}
+                ${v.capacity ? `<span class="badge">${v.capacity} Kişi</span>` : ''}
+                ${v.priceRange ? `<span class="badge">${v.priceRange}</span>` : ''}
+                ${v.isVerified ? `<span class="badge" style="background:var(--ok); color:#fff;">Onaylı Mekan</span>` : ''}
+              </div>
+
+              ${webHtml}
+
+              <div class="vendor-public-location">
+                <h3 style="margin:14px 0 10px 0;">Konum</h3>
+                <div id="vendorPublicMap" class="vendor-public-map" aria-label="Mekan harita konumu"></div>
+                <div id="vendorPublicAddress" class="muted" style="margin-top:8px;"></div>
+              </div>
+
+              <div class="vendor-public-social">
+                <div class="vendor-rating-row" style="margin-top:0;">
+                  <span class="rating-stars ${perfectClass}" style="--percent:${percent}%;" aria-label="${avg ? `${avg.toFixed(1)} / 5` : 'Değerlendirme yok'}"></span>
+                  <span class="muted vendor-rating-text">${avg ? `${avg.toFixed(1)} (${count})` : '—'}</span>
+                </div>
+
+                <div class="vendor-public-columns">
+                  <div class="card" style="margin-bottom:0;">
+                    <div class="row between center" style="gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                      <h3 style="margin:0;">Yorumlar</h3>
+                      <div id="vendorReviewsStatus" class="muted" style="display:none;"></div>
+                    </div>
+
+                    <div id="vendorReviewComposer" style="margin-bottom:12px;"></div>
+                    <div id="vendorReviewsList"></div>
+                  </div>
+
+                  <div class="card" id="vendorQuestionsSection" style="margin-bottom:0;">
+                    <div class="row between center" style="gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                      <h3 style="margin:0;">Soru Sor</h3>
+                      <div id="vendorQuestionsStatus" class="muted" style="display:none;"></div>
+                    </div>
+
+                    <div id="vendorQuestionComposer" style="margin-bottom:12px;"></div>
+                    <div id="vendorQuestionsList"></div>
+                  </div>
+                </div>
+              </div>
+            `;
+
+            // Gallery interactions (store-like)
+            try {
+              const gallery = $('.vendor-public-gallery', cardEl);
+              if (gallery && photoUrls.length > 0) {
+                let currentIndex = 0;
+                const heroLink = $('.vendor-public-hero-link', gallery);
+                const heroImg = $('#vendorPublicHeroImg', gallery);
+                const prevBtn = $('[data-hero-prev]', gallery);
+                const nextBtn = $('[data-hero-next]', gallery);
+                const thumbButtons = $$('[data-thumb-index]', gallery);
+
+                function setActiveThumb() {
+                  thumbButtons.forEach(btn => {
+                    const idx = Number(btn.getAttribute('data-thumb-index'));
+                    if (Number.isFinite(idx) && idx === currentIndex) btn.classList.add('is-active');
+                    else btn.classList.remove('is-active');
+                  });
+                }
+
+                function setHero(idx) {
+                  if (!heroImg || !heroLink) return;
+                  const safeIdx = ((idx % photoUrls.length) + photoUrls.length) % photoUrls.length;
+                  currentIndex = safeIdx;
+                  const url = photoUrls[safeIdx];
+                  heroImg.src = url;
+                  heroLink.href = url;
+                  setActiveThumb();
+                }
+
+                if (prevBtn) {
+                  prevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setHero(currentIndex - 1);
+                  });
+                }
+                if (nextBtn) {
+                  nextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setHero(currentIndex + 1);
+                  });
+                }
+
+                thumbButtons.forEach(btn => {
+                  btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const idx = Number(btn.getAttribute('data-thumb-index'));
+                    if (Number.isFinite(idx)) setHero(idx);
+                  });
+                });
+
+                setHero(0);
+              }
+            } catch (err) {
+              console.warn('Vendor gallery init failed:', err?.message || err);
+            }
+
+            // Map (Konum)
+            try {
+              const mapEl = $('#vendorPublicMap');
+              const addrEl = $('#vendorPublicAddress');
+              const lat = (typeof v.latitude === 'number' && Number.isFinite(v.latitude)) ? v.latitude : null;
+              const lng = (typeof v.longitude === 'number' && Number.isFinite(v.longitude)) ? v.longitude : null;
+              const addrText = v.addressLabel ? String(v.addressLabel) : '';
+
+              if (addrEl) {
+                addrEl.textContent = addrText || (lat && lng ? `Konum: ${lat.toFixed(5)}, ${lng.toFixed(5)}` : 'Konum bilgisi eklenmemiş.');
+              }
+
+              if (mapEl && lat && lng && window.L && typeof window.L.map === 'function') {
+                mapEl.innerHTML = '';
+                const map = window.L.map(mapEl, {
+                  zoomControl: true,
+                  scrollWheelZoom: false
+                }).setView([lat, lng], 15);
+
+                window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+
+                window.L.marker([lat, lng]).addTo(map);
+
+                // Leaflet needs a size invalidate when inside dynamic layout
+                setTimeout(() => {
+                  try { map.invalidateSize(); } catch (_) { }
+                }, 50);
+              } else if (mapEl) {
+                mapEl.innerHTML = '<div class="muted">Harita için konum bilgisi yok.</div>';
+              }
+            } catch (err) {
+              console.warn('Vendor map init failed:', err?.message || err);
+            }
+
+            // Composer UI (User only)
+            const reviewComposer = $('#vendorReviewComposer');
+            const questionComposer = $('#vendorQuestionComposer');
+            const isUserLoggedIn = !!token() && role() === 'User';
+            const loginHintHtml = `<div class="muted">Bu işlemi yapmak için <a href="/Auth/Login">giriş yapın</a> (User).</div>`;
+
+            if (reviewComposer) {
+              reviewComposer.innerHTML = isUserLoggedIn
+                ? `
+                  <form id="vendorReviewForm">
+                    <textarea id="vendorReviewText" class="input" rows="3" placeholder="Yorumunuzu yazın..."></textarea>
+                    <div class="row between center" style="gap:12px; flex-wrap:wrap; margin-top:8px;">
+                      <div id="vendorReviewSubmitStatus" class="muted" style="display:none;"></div>
+                      <button type="submit" class="btn small primary">Yorum Gönder</button>
+                    </div>
+                  </form>
+                `
+                : loginHintHtml;
+            }
+
+            if (questionComposer) {
+              questionComposer.innerHTML = isUserLoggedIn
+                ? `
+                  <form id="vendorQuestionForm">
+                    <textarea id="vendorQuestionText" class="input" rows="3" placeholder="Sorunuzu yazın..."></textarea>
+                    <div class="row between center" style="gap:12px; flex-wrap:wrap; margin-top:8px;">
+                      <div id="vendorQuestionSubmitStatus" class="muted" style="display:none;"></div>
+                      <button type="submit" class="btn small primary">Soruyu Gönder</button>
+                    </div>
+                  </form>
+                `
+                : loginHintHtml;
+            }
+
+            const reviewForm = $('#vendorReviewForm');
+            if (reviewForm) {
+              reviewForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const statusEl = $('#vendorReviewSubmitStatus');
+                setInlineStatus(statusEl, 'Gönderiliyor...');
+                try {
+                  const textEl = $('#vendorReviewText');
+                  const comment = textEl ? String(textEl.value || '').trim() : '';
+                  await api(`/api/vendors/${vendorUserId}/reviews`, {
+                    method: 'POST',
+                    body: JSON.stringify({ comment })
+                  });
+                  if (textEl) textEl.value = '';
+                  setInlineStatus(statusEl, 'Yorum kaydedildi.');
+                  await loadReviews();
+                  setTimeout(() => setInlineStatus(statusEl, ''), 2000);
+                } catch (err) {
+                  console.error('Review submit error:', err);
+                  setInlineStatus(statusEl, err.message || 'Yorum gönderilemedi.');
+                }
+              });
+            }
+
+            const questionForm = $('#vendorQuestionForm');
+            if (questionForm) {
+              questionForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const statusEl = $('#vendorQuestionSubmitStatus');
+                setInlineStatus(statusEl, 'Gönderiliyor...');
+                try {
+                  const textEl = $('#vendorQuestionText');
+                  const question = textEl ? String(textEl.value || '').trim() : '';
+                  await api(`/api/vendors/${vendorUserId}/questions`, {
+                    method: 'POST',
+                    body: JSON.stringify({ question })
+                  });
+                  if (textEl) textEl.value = '';
+                  setInlineStatus(statusEl, 'Soru gönderildi.');
+                  await loadQuestions();
+                  setTimeout(() => setInlineStatus(statusEl, ''), 2000);
+                } catch (err) {
+                  console.error('Question submit error:', err);
+                  setInlineStatus(statusEl, err.message || 'Soru gönderilemedi.');
+                }
+              });
+            }
+
+            await Promise.all([loadReviews(), loadQuestions()]);
+          }
+        } catch (err) {
+          console.error('Vendor public page load error:', err);
+          if (subtitleEl) subtitleEl.textContent = 'Detaylar yüklenemedi.';
+          if (cardEl) cardEl.innerHTML = '<div class="muted">Mekan bilgileri yüklenemedi.</div>';
         }
       }
 

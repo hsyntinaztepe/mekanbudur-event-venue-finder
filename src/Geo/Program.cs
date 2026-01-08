@@ -165,6 +165,32 @@ app.MapGet("/api/google-places/golbasi", async (
     }
 });
 
+app.MapGet("/api/google-places/photo", async (
+    string photoRef,
+    int? maxWidth,
+    GooglePlacesClient client,
+    CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(photoRef))
+    {
+        return Results.BadRequest("photoRef is required");
+    }
+
+    try
+    {
+        var (bytes, contentType) = await client.GetPhotoAsync(
+            photoReference: photoRef,
+            maxWidth: maxWidth ?? 480,
+            cancellationToken: cancellationToken);
+
+        return Results.File(bytes, contentType);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Google Places Photo API error: {ex.Message}", statusCode: 500);
+    }
+});
+
 // Fotoğrafçılar
 app.MapGet("/api/google-places/photographers", async (
     GooglePlacesClient client,

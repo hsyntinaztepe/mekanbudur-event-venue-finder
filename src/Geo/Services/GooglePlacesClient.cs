@@ -23,6 +23,12 @@ public class GooglePlacesClient
         string? keyword = null,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        {
+            Console.WriteLine("[GooglePlaces] ApiKey is empty. Returning 0 results.");
+            return Array.Empty<GooglePlaceDto>();
+        }
+
         var latVal = lat ?? _options.DefaultLat;
         var lngVal = lng ?? _options.DefaultLng;
         var radiusVal = radius ?? _options.DefaultRadius;
@@ -52,6 +58,37 @@ public class GooglePlacesClient
         {
             Console.WriteLine($"[GooglePlaces] Error: {root.ErrorMessage}");
         }
+
+        if (root is null)
+        {
+            throw new InvalidOperationException("Google Places response could not be parsed.");
+        }
+
+        var status = (root.Status ?? string.Empty).Trim();
+        var isOk = status.Equals("OK", StringComparison.OrdinalIgnoreCase);
+        var isZero = status.Equals("ZERO_RESULTS", StringComparison.OrdinalIgnoreCase);
+
+        // Don't crash the API when Google denies the request (most commonly: billing disabled)
+        // or when quota is exceeded. Return empty results so the UI can gracefully fall back.
+        var isDenied = status.Equals("REQUEST_DENIED", StringComparison.OrdinalIgnoreCase);
+        var isOverQuota = status.Equals("OVER_QUERY_LIMIT", StringComparison.OrdinalIgnoreCase);
+        var isInvalid = status.Equals("INVALID_REQUEST", StringComparison.OrdinalIgnoreCase);
+        if (!isOk && !isZero)
+        {
+            if (isDenied || isOverQuota || isInvalid)
+            {
+                var msg = string.IsNullOrWhiteSpace(root.ErrorMessage)
+                    ? $"Google Places request not available ({status}). Returning 0 results."
+                    : $"Google Places request not available ({status}): {root.ErrorMessage}. Returning 0 results.";
+                Console.WriteLine($"[GooglePlaces] {msg}");
+                return Array.Empty<GooglePlaceDto>();
+            }
+
+            var msg2 = string.IsNullOrWhiteSpace(root.ErrorMessage)
+                ? $"Google Places request failed ({status})."
+                : $"Google Places request failed ({status}): {root.ErrorMessage}";
+            throw new InvalidOperationException(msg2);
+        }
         
         if (root?.Results == null) return Array.Empty<GooglePlaceDto>();
 
@@ -62,9 +99,37 @@ public class GooglePlacesClient
                 Name = r.Name ?? string.Empty,
                 Address = r.Vicinity ?? r.FormattedAddress ?? string.Empty,
                 Lat = r.Geometry!.Location!.Lat,
-                Lng = r.Geometry!.Location!.Lng
+                Lng = r.Geometry!.Location!.Lng,
+                PhotoReference = r.Photos?.FirstOrDefault()?.PhotoReference
             })
             .ToList();
+    }
+
+    public async Task<(byte[] bytes, string contentType)> GetPhotoAsync(
+        string photoReference,
+        int maxWidth = 480,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(photoReference))
+        {
+            throw new ArgumentException("photoReference is required", nameof(photoReference));
+        }
+
+        var safeMaxWidth = Math.Clamp(maxWidth, 64, 1600);
+
+        var url =
+            $"https://maps.googleapis.com/maps/api/place/photo" +
+            $"?maxwidth={safeMaxWidth}" +
+            $"&photoreference={Uri.EscapeDataString(photoReference)}" +
+            $"&key={_options.ApiKey}";
+
+        using var resp = await _http.GetAsync(url, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+
+        var bytes = await resp.Content.ReadAsByteArrayAsync(cancellationToken);
+        var contentType = resp.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
+
+        return (bytes, contentType);
     }
 
     // İç DTO/JSON tipleri
@@ -93,6 +158,15 @@ public class GooglePlacesClient
         
         [JsonPropertyName("geometry")]
         public Geometry? Geometry { get; set; }
+
+        [JsonPropertyName("photos")]
+        public List<Photo>? Photos { get; set; }
+    }
+
+    public class Photo
+    {
+        [JsonPropertyName("photo_reference")]
+        public string? PhotoReference { get; set; }
     }
 
     public class Geometry
@@ -117,4 +191,5 @@ public class GooglePlaceDto
     public string Address { get; set; } = string.Empty;
     public double Lat { get; set; }
     public double Lng { get; set; }
+    public string? PhotoReference { get; set; }
 }

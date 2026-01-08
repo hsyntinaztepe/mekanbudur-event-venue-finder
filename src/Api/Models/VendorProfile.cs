@@ -18,6 +18,9 @@ namespace MekanBudur.Api.Models
         [MaxLength(250)]
         public string? ServiceCategoriesCsv { get; set; }
 
+        [MaxLength(500)]
+        public string? SuitableForCsv { get; set; } // Hangi etkinlik için uygun? (CSV)
+
         // Venue Details
         [MaxLength(200)]
         public string? VenueType { get; set; } // Açık Alan, Kapalı Salon, Bahçeli, vb.

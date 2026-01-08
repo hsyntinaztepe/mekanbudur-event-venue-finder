@@ -83,6 +83,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - CORS__AllowedOrigins=*
+      - GooglePlaces__ApiKey=${GOOGLE_PLACES_API_KEY}
     ports:
       - "8082:8080"
     healthcheck:

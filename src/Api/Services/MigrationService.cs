@@ -153,6 +153,141 @@ namespace MekanBudur.Api.Services
                     
                     Console.WriteLine("VendorProfiles columns added successfully.");
                 }
+
+                // 6b. Add SuitableForCsv column if it doesn't exist
+                var suitableForExists = false;
+                try
+                {
+                    db.Database.ExecuteSqlRaw("SELECT \"SuitableForCsv\" FROM \"VendorProfiles\" LIMIT 1");
+                    suitableForExists = true;
+                }
+                catch
+                {
+                    suitableForExists = false;
+                }
+
+                if (!suitableForExists)
+                {
+                    Console.WriteLine("Adding SuitableForCsv column to VendorProfiles...");
+                    db.Database.ExecuteSqlRaw(@"
+                        ALTER TABLE ""VendorProfiles"" 
+                        ADD COLUMN ""SuitableForCsv"" varchar(500);
+                    ");
+                    Console.WriteLine("SuitableForCsv column added successfully.");
+                }
+
+                // 7. Create VendorRatings table if it doesn't exist
+                var vendorRatingsTableExists = false;
+                try
+                {
+                    db.Database.ExecuteSqlRaw("SELECT count(*) FROM \"VendorRatings\"");
+                    vendorRatingsTableExists = true;
+                }
+                catch
+                {
+                    vendorRatingsTableExists = false;
+                }
+
+                if (!vendorRatingsTableExists)
+                {
+                    Console.WriteLine("Creating VendorRatings table...");
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE TABLE ""VendorRatings"" (
+                            ""Id"" uuid NOT NULL,
+                            ""VendorUserId"" uuid NOT NULL,
+                            ""UserId"" uuid NOT NULL,
+                            ""Rating"" integer NOT NULL,
+                            ""CreatedAtUtc"" timestamp with time zone NOT NULL,
+                            ""UpdatedAtUtc"" timestamp with time zone NULL,
+                            CONSTRAINT ""PK_VendorRatings"" PRIMARY KEY (""Id""),
+                            CONSTRAINT ""FK_VendorRatings_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE,
+                            CONSTRAINT ""FK_VendorRatings_Users_VendorUserId"" FOREIGN KEY (""VendorUserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE,
+                            CONSTRAINT ""CK_VendorRatings_Rating_Range"" CHECK (""Rating"" >= 1 AND ""Rating"" <= 5)
+                        );
+                    ");
+
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE UNIQUE INDEX ""IX_VendorRatings_VendorUserId_UserId"" ON ""VendorRatings"" (""VendorUserId"", ""UserId"");
+                        CREATE INDEX ""IX_VendorRatings_VendorUserId"" ON ""VendorRatings"" (""VendorUserId"");
+                    ");
+
+                    Console.WriteLine("VendorRatings table created successfully.");
+                }
+
+                // 8. Create VendorReviews table if it doesn't exist
+                var vendorReviewsTableExists = false;
+                try
+                {
+                    db.Database.ExecuteSqlRaw("SELECT count(*) FROM \"VendorReviews\"");
+                    vendorReviewsTableExists = true;
+                }
+                catch
+                {
+                    vendorReviewsTableExists = false;
+                }
+
+                if (!vendorReviewsTableExists)
+                {
+                    Console.WriteLine("Creating VendorReviews table...");
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE TABLE ""VendorReviews"" (
+                            ""Id"" uuid NOT NULL,
+                            ""VendorUserId"" uuid NOT NULL,
+                            ""UserId"" uuid NOT NULL,
+                            ""Comment"" varchar(1000) NOT NULL,
+                            ""CreatedAtUtc"" timestamp with time zone NOT NULL,
+                            ""UpdatedAtUtc"" timestamp with time zone NULL,
+                            CONSTRAINT ""PK_VendorReviews"" PRIMARY KEY (""Id""),
+                            CONSTRAINT ""FK_VendorReviews_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE,
+                            CONSTRAINT ""FK_VendorReviews_Users_VendorUserId"" FOREIGN KEY (""VendorUserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                        );
+                    ");
+
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE UNIQUE INDEX ""IX_VendorReviews_VendorUserId_UserId"" ON ""VendorReviews"" (""VendorUserId"", ""UserId"");
+                        CREATE INDEX ""IX_VendorReviews_VendorUserId"" ON ""VendorReviews"" (""VendorUserId"");
+                    ");
+
+                    Console.WriteLine("VendorReviews table created successfully.");
+                }
+
+                // 9. Create VendorQuestions table if it doesn't exist
+                var vendorQuestionsTableExists = false;
+                try
+                {
+                    db.Database.ExecuteSqlRaw("SELECT count(*) FROM \"VendorQuestions\"");
+                    vendorQuestionsTableExists = true;
+                }
+                catch
+                {
+                    vendorQuestionsTableExists = false;
+                }
+
+                if (!vendorQuestionsTableExists)
+                {
+                    Console.WriteLine("Creating VendorQuestions table...");
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE TABLE ""VendorQuestions"" (
+                            ""Id"" uuid NOT NULL,
+                            ""VendorUserId"" uuid NOT NULL,
+                            ""UserId"" uuid NOT NULL,
+                            ""Question"" varchar(500) NOT NULL,
+                            ""Answer"" varchar(1000) NULL,
+                            ""CreatedAtUtc"" timestamp with time zone NOT NULL,
+                            ""AnsweredAtUtc"" timestamp with time zone NULL,
+                            CONSTRAINT ""PK_VendorQuestions"" PRIMARY KEY (""Id""),
+                            CONSTRAINT ""FK_VendorQuestions_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE,
+                            CONSTRAINT ""FK_VendorQuestions_Users_VendorUserId"" FOREIGN KEY (""VendorUserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                        );
+                    ");
+
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE INDEX ""IX_VendorQuestions_VendorUserId"" ON ""VendorQuestions"" (""VendorUserId"");
+                        CREATE INDEX ""IX_VendorQuestions_CreatedAtUtc"" ON ""VendorQuestions"" (""CreatedAtUtc"");
+                    ");
+
+                    Console.WriteLine("VendorQuestions table created successfully.");
+                }
             }
             catch (Exception ex)
             {

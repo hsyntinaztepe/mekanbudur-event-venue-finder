@@ -70,3 +70,16 @@ TestResults/
 # Logs
 *.log
 
+# App uploaded / generated media (keep out of git)
+src/Api/wwwroot/uploads/vendor-photos/
+
+# Generated listing images (optional local cache)
+src/Web/wwwroot/img/listing-photos/
+
+# Place photos are fetched locally via tooling; avoid pushing third-party images
+src/Web/wwwroot/img/place-photos/*
+!src/Web/wwwroot/img/place-photos/manifest.json
+
+# Unused large demo assets
+src/Web/public/
+

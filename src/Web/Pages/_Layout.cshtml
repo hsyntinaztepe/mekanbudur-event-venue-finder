@@ -11,19 +11,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/site.css?v=@DateTime.Now.Ticks" />
+    @if (Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User"))
+    {
+        <link rel="stylesheet" href="/css/light.css?v=@DateTime.Now.Ticks" />
+    }
+    @if (Context.Request.Path.StartsWithSegments("/home"))
+    {
+        <link rel="stylesheet" href="/css/home.css?v=@DateTime.Now.Ticks" />
+    }
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
-<body>
+<body class="@((Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User")) ? "theme-light" : "")">
     <header class="topbar">
         <div class="container row between center">
             <div class="brand-section">
-                <a class="brand" href="/">MekanBudur</a>
+                <a class="brand" href="/home">MekanBudur</a>
                 <span class="nav-divider"></span>
                 <a href="/Auth/Login" class="nav-link-special only-guest">İlan Ver</a>
                 <a href="/User/Dashboard" class="nav-link-special only-user">İlan Ver</a>
             </div>
             <nav class="nav">
+                <a href="/home">Ana Sayfa</a>
                 <a href="/Pazar-Alani">Pazar Alanı</a>
                 <a href="/Auth/Login" class="only-guest">Giriş</a>
                 <a href="/Auth/Register" class="only-guest">Kayıt</a>
@@ -34,7 +43,7 @@
             </nav>
         </div>
     </header>
-    <main class="@(Context.Request.Path == "/" ? "container-home" : Context.Request.Path.StartsWithSegments("/Pazar-Alani") ? "container-wide" : "container")">
+    <main class="@(Context.Request.Path == "/" || Context.Request.Path.StartsWithSegments("/home") ? "container-home" : Context.Request.Path.StartsWithSegments("/Pazar-Alani") ? "container-wide" : "container")">
         @RenderBody()
     </main>
     <footer class="footer">
@@ -48,3 +57,4 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </body>
 </html>
+

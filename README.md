@@ -117,6 +117,74 @@ evently-docker-dotnet/
    - 🗺️ **Geo API (Swagger)**: http://localhost:8082/swagger
    - 🗄️ **pgAdmin**: http://localhost:5050
 
+### Google Places (opsiyonel)
+
+Ana sayfadaki **“Mekanları Keşfet”** görsel akışı ve `/Pazar-Alani` sayfasındaki Google Places mekanları için Google Places API gereklidir.
+
+#### 1) API key alma (Google Cloud) — adım adım
+
+1. Google Cloud Console’a girin: https://console.cloud.google.com/
+2. Yeni bir proje oluşturun (veya mevcut projeyi seçin).
+3. **Billing** bağlayın:
+  - Menü → **Billing** → projeye bir faturalandırma hesabı bağlayın.
+  - Not: Billing etkin değilse Google çoğu zaman `REQUEST_DENIED` döndürür.
+4. Gerekli API’yi açın:
+  - Menü → **APIs & Services** → **Library**
+  - **Places API**’yi bulun ve **Enable** edin.
+5. API anahtarı oluşturun:
+  - **APIs & Services** → **Credentials** → **Create credentials** → **API key**
+6. (Önerilir) Anahtarı kısıtlayın:
+  - Aynı ekranda ilgili key → **Edit API key**
+  - **API restrictions**: “Restrict key” → sadece **Places API** seçin.
+  - **Application restrictions**: Local Docker geliştirmede genelde *None* en sorunsuzudur.
+    - IP/Referrer kısıtlaması yanlış ayarlanırsa istekler bloklanır.
+
+#### 2) API key’i projeye verme (Docker/Windows)
+
+Uygulama Docker Compose ile çalışırken key, hosttan `GOOGLE_PLACES_API_KEY` adıyla alınır ve Geo servisine `GooglePlaces__ApiKey` olarak aktarılır.
+
+**Seçenek A (önerilen): `.env` dosyası (kalıcı, en pratik)**
+
+1. Bu klasörde `.env` dosyası oluşturun:
+  - `evently-docker-dotnet/.env`
+2. İçine şunu ekleyin (tırnaksız):
+  - `GOOGLE_PLACES_API_KEY=YOUR_KEY_HERE`
+3. Compose’u yeniden başlatın:
+  ```bash
+  docker compose up -d --build
+  ```
+
+**Seçenek B: PowerShell oturum değişkeni (geçici, hızlı test)**
+
+```powershell
+$env:GOOGLE_PLACES_API_KEY = "YOUR_KEY_HERE"
+docker compose up -d --build
+```
+
+**Seçenek C: `setx` ile kalıcı ortam değişkeni (terminali yeniden açmak gerekir)**
+
+```powershell
+setx GOOGLE_PLACES_API_KEY "YOUR_KEY_HERE"
+```
+
+Sonra yeni bir terminal açıp:
+
+```powershell
+docker compose up -d --build
+```
+
+#### 3) Çalıştığını doğrulama
+
+Key doğruysa şu endpoint `200` dönmeli:
+
+```powershell
+curl.exe -sS http://localhost:8081/api/google-places/golbasi
+```
+
+Key yoksa/yanlışsa genelde `500` ve detayda “API key is not configured” veya Google’dan gelen `REQUEST_DENIED` görürsünüz.
+
+Not: Billing etkin değilse Google `REQUEST_DENIED` döner; bu durumda uygulama mekanları boş döndürebilir veya sabit (demo) veriye düşebilir.
+
 ### Servisleri Durdurma
 
 ```bash

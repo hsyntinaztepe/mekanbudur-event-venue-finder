@@ -14,6 +14,9 @@ namespace MekanBudur.Api.Data
         public DbSet<EventListingItem> EventListingItems { get; set; } = default!;
         public DbSet<Bid> Bids { get; set; } = default!;
         public DbSet<BidItem> BidItems { get; set; } = default!;
+        public DbSet<VendorRating> VendorRatings { get; set; } = default!;
+        public DbSet<VendorReview> VendorReviews { get; set; } = default!;
+        public DbSet<VendorQuestion> VendorQuestions { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,6 +47,54 @@ namespace MekanBudur.Api.Data
                 .HasOne(b => b.VendorUser)
                 .WithMany()
                 .HasForeignKey(b => b.VendorUserId);
+
+            modelBuilder.Entity<VendorRating>(entity =>
+            {
+                entity.HasIndex(r => new { r.VendorUserId, r.UserId })
+                    .IsUnique();
+
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.VendorUser)
+                    .WithMany()
+                    .HasForeignKey(r => r.VendorUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(t => t.HasCheckConstraint("CK_VendorRatings_Rating_Range", "\"Rating\" >= 1 AND \"Rating\" <= 5"));
+            });
+
+            modelBuilder.Entity<VendorReview>(entity =>
+            {
+                entity.HasIndex(r => new { r.VendorUserId, r.UserId }).IsUnique();
+
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.VendorUser)
+                    .WithMany()
+                    .HasForeignKey(r => r.VendorUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<VendorQuestion>(entity =>
+            {
+                entity.HasIndex(q => q.VendorUserId);
+
+                entity.HasOne(q => q.User)
+                    .WithMany()
+                    .HasForeignKey(q => q.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(q => q.VendorUser)
+                    .WithMany()
+                    .HasForeignKey(q => q.VendorUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

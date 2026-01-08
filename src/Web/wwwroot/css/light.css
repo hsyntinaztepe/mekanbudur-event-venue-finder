@@ -1,0 +1,100 @@
+/* Shared light theme overrides (used on specific routes) */
+body.theme-light{
+  --bg:#ffffff;
+  --card:#ffffff;
+  --muted:#475569;
+  --text:#0f172a;
+  --border:#e2e8f0;
+
+  /* Override site.css body gradient */
+  background: var(--bg);
+  color: var(--text);
+}
+
+body.theme-light a{ color: inherit; }
+
+body.theme-light .topbar{
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--border);
+}
+
+body.theme-light .nav .ghost{
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.theme-light .btn{
+  background:#ffffff;
+  color: var(--text);
+}
+
+body.theme-light .input{
+  background:#ffffff;
+  color: var(--text);
+}
+
+/* Navbar contrast improvements for light theme */
+body.theme-light .brand{
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: var(--text);
+  background-clip: initial;
+  color: var(--text);
+}
+
+body.theme-light .nav-link-special{
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: var(--primary);
+  background-clip: initial;
+  color: var(--primary);
+}
+
+body.theme-light .nav-link-special:hover{
+  background: none;
+  -webkit-text-fill-color: var(--primary-700);
+  color: var(--primary-700);
+}
+
+body.theme-light .nav-link-special::after{
+  background: var(--primary);
+}
+
+/* Auth pages (Login/Register) - centered, compact layout */
+body.theme-light .auth-page{
+  max-width: 640px;
+  margin: 38px auto 64px;
+}
+
+body.theme-light .auth-title{
+  margin: 0 0 18px;
+  text-align: center;
+  font-size: clamp(24px, 4vw, 34px);
+}
+
+body.theme-light .auth-card{
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 22px;
+
+  /* Glass look */
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(226, 232, 240, 0.9);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+}
+
+body.theme-light .auth-form{
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+body.theme-light .auth-form .btn.primary{
+  width: 100%;
+  margin-top: 8px;
+}
+
+body.theme-light .auth-foot{
+  text-align: center;
+  margin-top: 14px;
+}

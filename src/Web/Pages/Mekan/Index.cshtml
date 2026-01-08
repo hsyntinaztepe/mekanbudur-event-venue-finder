@@ -1,0 +1,19 @@
+@page "/Mekan/{userId:guid}"
+@{
+    var userId = RouteData.Values["userId"]?.ToString() ?? string.Empty;
+}
+
+<div id="vendorPublicRoot" data-vendor-user-id="@userId" class="vendor-public-page">
+  <div class="dashboard-header" style="margin-bottom:16px">
+    <div class="row between center" style="gap:12px; flex-wrap:wrap;">
+      <h2 id="vendorPublicTitle" style="margin:0;">Mekan</h2>
+      <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+        <div id="vendorPublicHeaderActions" class="row" style="gap:8px; align-items:center; flex-wrap:wrap;"></div>
+        <div id="vendorPublicHeaderRating" class="vendor-rating-row" style="margin:0; display:none;"></div>
+      </div>
+    </div>
+    <p id="vendorPublicSubtitle" class="muted">Detaylar yükleniyor...</p>
+  </div>
+
+  <div id="vendorPublicCard" class="card"></div>
+</div>

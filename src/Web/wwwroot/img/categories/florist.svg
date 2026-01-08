@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Çiçekçi">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ecfeff"/>
+      <stop offset="1" stop-color="#f0fdf4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <rect x="18" y="18" width="604" height="324" rx="22" fill="#ffffff" filter="url(#shadow)"/>
+
+  <!-- Bouquet wrap -->
+  <g transform="translate(0,4)">
+    <path d="M250,290 L320,170 L390,290" fill="#111827" opacity="0.9"/>
+    <path d="M266,290 L320,190 L374,290" fill="#f3f4f6" opacity="0.14"/>
+    <path d="M292,290 C304,268 336,268 348,290" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.22" stroke-linecap="round"/>
+    <path d="M304,264 C320,276 336,276 352,264" fill="none" stroke="#fb7185" stroke-width="10" opacity="0.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Stems -->
+  <g stroke="#10b981" stroke-width="10" stroke-linecap="round" opacity="0.75">
+    <path d="M320,210 L320,150"/>
+    <path d="M300,220 L280,160"/>
+    <path d="M340,220 L360,160"/>
+  </g>
+
+  <!-- Flowers -->
+  <g transform="translate(0,2)">
+    <g transform="translate(280,120)">
+      <circle cx="0" cy="0" r="18" fill="#fb7185"/>
+      <circle cx="20" cy="-12" r="14" fill="#fda4af"/>
+      <circle cx="22" cy="14" r="14" fill="#fda4af"/>
+      <circle cx="-18" cy="-10" r="14" fill="#fda4af"/>
+      <circle cx="-16" cy="14" r="14" fill="#fda4af"/>
+      <circle cx="2" cy="2" r="8" fill="#111827" opacity="0.55"/>
+    </g>
+    <g transform="translate(360,120)">
+      <circle cx="0" cy="0" r="18" fill="#f59e0b"/>
+      <circle cx="20" cy="-12" r="14" fill="#fde68a"/>
+      <circle cx="22" cy="14" r="14" fill="#fde68a"/>
+      <circle cx="-18" cy="-10" r="14" fill="#fde68a"/>
+      <circle cx="-16" cy="14" r="14" fill="#fde68a"/>
+      <circle cx="2" cy="2" r="8" fill="#111827" opacity="0.35"/>
+    </g>
+    <g transform="translate(320,98)">
+      <circle cx="0" cy="0" r="16" fill="#60a5fa"/>
+      <circle cx="18" cy="-10" r="12" fill="#93c5fd"/>
+      <circle cx="20" cy="12" r="12" fill="#93c5fd"/>
+      <circle cx="-16" cy="-8" r="12" fill="#93c5fd"/>
+      <circle cx="-14" cy="12" r="12" fill="#93c5fd"/>
+      <circle cx="1" cy="1" r="7" fill="#111827" opacity="0.25"/>
+    </g>
+  </g>
+
+  <!-- Floating dots -->
+  <g opacity="0.5">
+    <circle cx="140" cy="110" r="6" fill="#d1d5db"/>
+    <circle cx="510" cy="104" r="5" fill="#d1d5db"/>
+    <circle cx="520" cy="130" r="4" fill="#e5e7eb"/>
+  </g>
+</svg>
