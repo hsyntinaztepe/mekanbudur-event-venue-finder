@@ -148,7 +148,10 @@
       getPlacePhotosManifest().then(manifest => {
         const path = manifest && manifest.items && manifest.items[placeKey] && manifest.items[placeKey].path;
         if (path) {
-          img.src = path;
+          // Cache-bust on replacements: manifest is fetched with `no-store` and `generatedAtUtc`
+          // changes after each upload, so use it as a stable version key.
+          const v = (manifest && manifest.generatedAtUtc) ? String(manifest.generatedAtUtc) : String(Date.now());
+          img.src = path + (String(path).includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(v);
         }
       });
     }
@@ -274,10 +277,16 @@
   }
 
   function bidCard(b){
-    // Show bid items
-    const itemsHtml = b.items.map(i => `<div>${i.categoryName}: ${fmt.format(i.amount)} ₺</div>`).join('');
+    const itemsHtml = (b && Array.isArray(b.items) ? b.items : [])
+      .map(i => `<div>${i.categoryName}: ${fmt.format(i.amount)} ₺</div>`)
+      .join('');
+
+    const bidId = (b && b.id) ? String(b.id) : '';
+    const phone = (b && b.vendorPhoneNumber) ? String(b.vendorPhoneNumber).trim() : '';
+    const phoneText = phone || 'Telefon yok';
+
     return `
-      <div class="card">
+      <div class="card bid-card">
         <div class="row between center">
           <strong>${b.vendorName || '-'}</strong>
           <span class="badge">${b.status}</span>
@@ -285,8 +294,71 @@
         <div class="muted" style="margin:8px 0; font-size:14px">${itemsHtml}</div>
         <p class="price">Toplam: ${fmt.format(b.totalAmount)} ₺</p>
         <p class="muted">${b.message || ''}</p>
+        <div class="row gap wrap" style="margin-top:10px; align-items:center;">
+          <span class="bid-contact-wrap" style="position:relative; display:inline-block; overflow:visible;">
+            <button type="button" class="btn small" data-bid-call="${bidId}">İletişime Geç</button>
+            <div class="vendor-public-phone-pop" data-bid-phone-pop="${bidId}" style="display:none; position:absolute; left:0; top:calc(100% + 8px); z-index:9999; min-width:260px;">
+              <div class="vendor-public-phone-pop-inner">
+                <div class="vendor-public-phone-row">
+                  <div class="vendor-public-phone-number">${phoneText}</div>
+                  <button type="button" class="btn small danger" data-bid-phone-search="${bidId}">Ara</button>
+                </div>
+              </div>
+            </div>
+          </span>
+        </div>
       </div>
     `;
+  }
+
+  function bindBidCallPopups(container){
+    if (!container) return;
+
+    // Bind call buttons
+    container.querySelectorAll('[data-bid-call]').forEach(btn => {
+      if (btn.__bidCallBound) return;
+      btn.__bidCallBound = true;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute('data-bid-call');
+        if (!id) return;
+        const pop = container.querySelector(`[data-bid-phone-pop="${CSS.escape(id)}"]`);
+        if (!pop) return;
+
+        // Close other popups in this container
+        container.querySelectorAll('[data-bid-phone-pop]').forEach(p => {
+          if (p !== pop) p.style.display = 'none';
+        });
+
+        pop.style.display = (pop.style.display === 'none' || !pop.style.display) ? 'block' : 'none';
+      });
+    });
+
+    // Dummy search button (no-op)
+    container.querySelectorAll('[data-bid-phone-search]').forEach(btn => {
+      if (btn.__bidPhoneSearchBound) return;
+      btn.__bidPhoneSearchBound = true;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // intentionally no action
+      });
+    });
+
+    // Close on outside click (bind once globally)
+    if (!window.__bidPhoneOutsideClickBound) {
+      window.__bidPhoneOutsideClickBound = true;
+      document.addEventListener('click', (e) => {
+        const t = e.target;
+        if (!t) return;
+        // If click is inside any popup or on any call button, ignore
+        if (t.closest && (t.closest('[data-bid-phone-pop]') || t.closest('[data-bid-call]'))) return;
+        document.querySelectorAll('[data-bid-phone-pop]').forEach(p => {
+          p.style.display = 'none';
+        });
+      });
+    }
   }
 
   async function loadCategories(selectEl){
@@ -1310,6 +1382,7 @@
     try {
       const bids = await api(`/api/listings/${listingId}/bids`);
       container.innerHTML = bids.length ? bids.map(bidCard).join('') : '<div class="muted">Henüz teklif yok.</div>';
+      bindBidCallPopups(container);
     } catch (err) {
       console.error('Teklifler yüklenemedi:', err);
       container.innerHTML = `<div class="muted">Hata: ${err.message}</div>`;
@@ -2250,9 +2323,19 @@
         const service = (homeServiceBtn.dataset.value || '').trim();
         const city = (homeCityBtn.dataset.value || '').trim();
         const params = new URLSearchParams();
-        if (service) params.set('q', service);
         if (city) params.set('location', city);
-        const target = '/Marketplace' + (params.toString() ? `?${params.toString()}` : '');
+
+        // Home'daki "Nasıl Yardımcı Olabiliriz?" seçenekleri bir "Ne için?" (event purpose)
+        // filtresi gibi davranır; bu yüzden Pazar Alanı'nda "Hizmet" sekmesine yönlendiriyoruz.
+        if (service) {
+          params.set('type', 'hizmet');
+          params.set('purpose', service);
+        } else {
+          // Sadece şehir seçildiyse ilanları o konuma göre filtrelemek daha mantıklı.
+          params.set('type', 'ilan');
+        }
+
+        const target = '/Pazar-Alani' + (params.toString() ? `?${params.toString()}` : '');
         window.location.href = target;
       });
     }
@@ -2299,11 +2382,65 @@
           TR_LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('');
       }
 
-      // QueryString -> ilan konumu prefill
+      // QueryString -> prefill + ilk arama
       const qs = new URLSearchParams(window.location.search);
+      const normalizeTr = (v) => String(v || '')
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ş/g, 's')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+
+      const findSelectValue = (selectEl, desired) => {
+        if (!selectEl || !desired) return '';
+        const desiredNorm = normalizeTr(desired);
+        const opts = Array.from(selectEl.options || []);
+        const hit = opts.find(o => normalizeTr(o.value) === desiredNorm || normalizeTr(o.textContent) === desiredNorm);
+        return hit ? hit.value : '';
+      };
+
+      const qsTypeRaw = normalizeTr(qs.get('type') || '');
       const qsLocation = (qs.get('location') || '').trim();
-      if (qsLocation && listingLoc) {
-        listingLoc.value = qsLocation;
+      const qsPurpose = (qs.get('purpose') || '').trim();
+      const qsListingQ = (qs.get('q') || '').trim();
+      const qsServiceTerm = (qs.get('service') || '').trim();
+
+      let shouldAutoSearch = false;
+
+      if (qsTypeRaw === 'hizmet' || qsTypeRaw === 'ilan') {
+        window.__pazarSearchType = qsTypeRaw;
+      }
+
+      if (qsLocation) {
+        if (listingLoc) listingLoc.value = qsLocation;
+        if (serviceLoc) serviceLoc.value = qsLocation;
+        shouldAutoSearch = true;
+      }
+
+      const listingQEl = $('#pazarListingQ');
+      if (qsListingQ && listingQEl) {
+        listingQEl.value = qsListingQ;
+        if (!window.__pazarSearchType) window.__pazarSearchType = 'ilan';
+        shouldAutoSearch = true;
+      }
+
+      const serviceTermEl = $('#pazarServiceTerm');
+      if (qsServiceTerm && serviceTermEl) {
+        serviceTermEl.value = qsServiceTerm;
+        if (!window.__pazarSearchType) window.__pazarSearchType = 'hizmet';
+        shouldAutoSearch = true;
+      }
+
+      if (qsPurpose && purposeSel) {
+        const match = findSelectValue(purposeSel, qsPurpose);
+        if (match) {
+          purposeSel.value = match;
+          if (!window.__pazarSearchType) window.__pazarSearchType = 'hizmet';
+          shouldAutoSearch = true;
+        }
       }
 
       bindPazarTypeToggle();
@@ -2314,7 +2451,11 @@
       if (showAllBtn) showAllBtn.addEventListener('click', () => showAllPazar());
 
       setPazarSearchType(window.__pazarSearchType || 'ilan');
-      await showAllPazar();
+      if (shouldAutoSearch) {
+        await searchPazarDispatch();
+      } else {
+        await showAllPazar();
+      }
 
       const listingsPanel = document.getElementById('pazarListingsPanel');
       const toggleBtn = document.getElementById('pazarListingsToggle');
@@ -2595,7 +2736,11 @@
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-bids');
             const bids = await api(`/api/listings/${id}/bids`);
-            $('#bidsContainer').innerHTML = bids.length ? bids.map(bidCard).join('') : '<div class="muted">Henüz teklif yok.</div>';
+            const bc = $('#bidsContainer');
+            if (bc) {
+              bc.innerHTML = bids.length ? bids.map(bidCard).join('') : '<div class="muted">Henüz teklif yok.</div>';
+              bindBidCallPopups(bc);
+            }
             // accept
             $$('#bidsContainer [data-accept]').forEach(ab => {
               ab.addEventListener('click', async () => {
@@ -2735,6 +2880,7 @@
         if (!myBidsEl) return;
         const bids = await api('/api/bids/mine');
         myBidsEl.innerHTML = bids.map(bidCard).join('');
+        bindBidCallPopups(myBidsEl);
       };
 
       if (typeof loadOpen === 'function') {

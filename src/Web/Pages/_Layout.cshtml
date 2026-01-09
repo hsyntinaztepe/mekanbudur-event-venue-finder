@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/site.css?v=@DateTime.Now.Ticks" />
-    @if (Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User"))
+    @if (Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User") || Context.Request.Path.StartsWithSegments("/Listings"))
     {
         <link rel="stylesheet" href="/css/light.css?v=@DateTime.Now.Ticks" />
     }
@@ -22,7 +22,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
-<body class="@((Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User")) ? "theme-light" : "")">
+<body class="@((Context.Request.Path.StartsWithSegments("/home") || Context.Request.Path.StartsWithSegments("/Pazar-Alani") || Context.Request.Path.StartsWithSegments("/Auth") || Context.Request.Path.StartsWithSegments("/Vendor") || Context.Request.Path.StartsWithSegments("/Mekan") || Context.Request.Path.StartsWithSegments("/User") || Context.Request.Path.StartsWithSegments("/Listings")) ? "theme-light" : "")">
     <header class="topbar">
         <div class="container row between center">
             <div class="brand-section">

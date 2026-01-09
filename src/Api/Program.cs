@@ -1077,6 +1077,10 @@ app.MapPost("/api/bids", [Authorize(Roles = "Vendor")] async (BidCreateRequest r
 app.MapGet("/api/bids/mine", [Authorize(Roles = "Vendor")] async (ClaimsPrincipal me, AppDbContext db) =>
 {
     var myId = GetUserId(me);
+    var myPhone = await db.VendorProfiles
+        .Where(vp => vp.UserId == myId)
+        .Select(vp => vp.PhoneNumber)
+        .FirstOrDefaultAsync();
     var bids = await db.Bids
         .Include(b => b.EventListing)
         .Include(b => b.Items).ThenInclude(bi => bi.EventListingItem).ThenInclude(eli => eli.ServiceCategory)
@@ -1087,7 +1091,9 @@ app.MapGet("/api/bids/mine", [Authorize(Roles = "Vendor")] async (ClaimsPrincipa
     var result = bids.Select(b => new BidResponse(
         b.Id, b.EventListingId, b.Amount,
         b.Items.Select(i => new BidItemResponse(i.Id, i.EventListingItemId, i.EventListingItem.ServiceCategory.Name, i.Amount)).ToList(),
-        b.Message, "", b.Status.ToString(), b.CreatedAtUtc
+        b.Message, "", b.Status.ToString(), b.CreatedAtUtc,
+        b.VendorUserId,
+        myPhone
     )).ToList();
 
     return Results.Ok(result);
@@ -1107,10 +1113,21 @@ app.MapGet("/api/listings/{id:guid}/bids", [Authorize] async (Guid id, ClaimsPri
         .OrderByDescending(b => b.CreatedAtUtc)
         .ToListAsync();
 
+    var vendorIds = bids.Select(b => b.VendorUserId).Distinct().ToList();
+    var vendorPhones = await db.VendorProfiles
+        .Where(vp => vendorIds.Contains(vp.UserId))
+        .Select(vp => new { vp.UserId, vp.PhoneNumber })
+        .ToDictionaryAsync(x => x.UserId, x => x.PhoneNumber);
+
     var result = bids.Select(b => new BidResponse(
         b.Id, b.EventListingId, b.Amount,
         b.Items.Select(i => new BidItemResponse(i.Id, i.EventListingItemId, i.EventListingItem.ServiceCategory.Name, i.Amount)).ToList(),
-        b.Message, b.VendorUser.DisplayName ?? b.VendorUser.Email, b.Status.ToString(), b.CreatedAtUtc
+        b.Message,
+        b.VendorUser.DisplayName ?? b.VendorUser.Email,
+        b.Status.ToString(),
+        b.CreatedAtUtc,
+        b.VendorUserId,
+        vendorPhones.TryGetValue(b.VendorUserId, out var phone) ? phone : null
     )).ToList();
 
     return Results.Ok(result);

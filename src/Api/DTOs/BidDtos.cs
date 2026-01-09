@@ -18,7 +18,9 @@ namespace MekanBudur.Api.DTOs
         string? Message,
         string VendorName,
         string Status,
-        DateTime CreatedAtUtc
+        DateTime CreatedAtUtc,
+        Guid VendorUserId,
+        string? VendorPhoneNumber
     );
 
     public record BidItemResponse(

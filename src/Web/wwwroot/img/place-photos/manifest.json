@@ -1,4 +1,348 @@
-﻿{
-  \"generatedAtUtc\": \"2026-01-08T21:51:46.6363270Z\",
-  \"items\": {}
+{
+  "generatedAtUtc": "2026-01-09T16:37:15.261096Z",
+  "items": {
+    "kronos-golbasi-dugun-salonu": {
+      "path": "/img/place-photos/kronos-golbasi-dugun-salonu.jpg",
+      "name": "Kronos Gölbaşı Düğün Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "life-park-dugun-salonu": {
+      "path": "/img/place-photos/life-park-dugun-salonu.jpg",
+      "name": "Life Park Düğün Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "akalin-balo-salonu": {
+      "path": "/img/place-photos/akalin-balo-salonu.jpg",
+      "name": "Akalın Balo Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "rihtim-riva-eymir": {
+      "path": "/img/place-photos/rihtim-riva-eymir.jpg",
+      "name": "Rıhtım Riva Eymir",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "hera-balo-salonlari": {
+      "path": "/img/place-photos/hera-balo-salonlari.jpg",
+      "name": "Hera Balo Salonları",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "pembe-kosk-balosalonlari": {
+      "path": "/img/place-photos/pembe-kosk-balosalonlari.jpg",
+      "name": "pembe köşk balosalonları",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "bahceli-park-dugun-salonu": {
+      "path": "/img/place-photos/bahceli-park-dugun-salonu.jpg",
+      "name": "Bahçeli Park Düğün Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "gol-seyir-golbasi-kir-bahcesi-balo-salonu": {
+      "path": "/img/place-photos/gol-seyir-golbasi-kir-bahcesi-balo-salonu.jpg",
+      "name": "Göl Seyir Gölbaşı Kır Bahçesi & Balo Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "ankyra-event-dugun-salonu": {
+      "path": "/img/place-photos/ankyra-event-dugun-salonu.jpg",
+      "name": "Ankyra Event - Düğün Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "florya-wedding": {
+      "path": "/img/place-photos/florya-wedding.jpg",
+      "name": "Florya Wedding",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "elite-wedding-hall": {
+      "path": "/img/place-photos/elite-wedding-hall.jpg",
+      "name": "Elite Wedding Hall",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "golde-luxe-wedding-events": {
+      "path": "/img/place-photos/golde-luxe-wedding-events.jpg",
+      "name": "GÖLDE LUXE WEDDİNG & EVENTS",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "villadestewedding": {
+      "path": "/img/place-photos/villadestewedding.jpg",
+      "name": "villadestewedding",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "panorama-wedding-event-golbasi-dugun-salonu": {
+      "path": "/img/place-photos/panorama-wedding-event-golbasi-dugun-salonu.jpg",
+      "name": "Panorama Wedding & Event Gölbaşı Düğün Salonu",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "yess-balo-ve-davet-salonlari": {
+      "path": "/img/place-photos/yess-balo-ve-davet-salonlari.jpg",
+      "name": "YESS BALO VE DAVET SALONLARI",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "ciragan-mogan": {
+      "path": "/img/place-photos/ciragan-mogan.jpg",
+      "name": "ÇIRAĞAN MOGAN",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "golbasi-akalin-wedding-plaza": {
+      "path": "/img/place-photos/golbasi-akalin-wedding-plaza.jpg",
+      "name": "Gölbaşı Akalın Wedding Plaza",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "ulger-konagi-kir-bahcesi": {
+      "path": "/img/place-photos/ulger-konagi-kir-bahcesi.jpg",
+      "name": "ÜLGER KONAĞI KIR BAHÇESİ",
+      "category": "wedding",
+      "source": "local",
+      "attribution": null
+    },
+    "incek-bogaz-ankara-fotograf-platosu": {
+      "path": "/img/place-photos/incek-bogaz-ankara-fotograf-platosu.webp",
+      "name": "İncek Boğaz Ankara Fotoğraf Platosu",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "dugune-gel": {
+      "path": "/img/place-photos/dugune-gel.png",
+      "name": "Düğüne Gel",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "baris-film-fotografcilik": {
+      "path": "/img/place-photos/baris-film-fotografcilik.webp",
+      "name": "Baris Film & Fotoğrafçılık",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "foto-turgut-acele-vesikalik": {
+      "path": "/img/place-photos/foto-turgut-acele-vesikalik.jpg",
+      "name": "Foto Turgut Acele Vesikalik",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "foto-yildiz": {
+      "path": "/img/place-photos/foto-yildiz.webp",
+      "name": "Foto Yıldız",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "asonka-fotograf-studyosu": {
+      "path": "/img/place-photos/asonka-fotograf-studyosu.webp",
+      "name": "Asonka Fotoğraf Stüdyosu",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "uzay-photography": {
+      "name": "Uzay Photography",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null,
+      "path": "/img/place-photos/uzay-photography.jpg"
+    },
+    "renko-fotografcilik": {
+      "path": "/img/place-photos/renko-fotografcilik.jpg",
+      "name": "Renko Fotoğrafçılık",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "kuzey-fotograf": {
+      "path": "/img/place-photos/kuzey-fotograf.jpg",
+      "name": "Kuzey Fotoğraf",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "studyo-s-s-golbasi": {
+      "path": "/img/place-photos/studyo-s-s-golbasi.jpg",
+      "name": "Studyo S&S Gölbaşı",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "alper-color-fotograf-studyosu": {
+      "path": "/img/place-photos/alper-color-fotograf-studyosu.webp",
+      "name": "Alper Color Fotoğraf Stüdyosu",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "ankara-dugun-fotografcisi-art-produksiyon": {
+      "path": "/img/place-photos/ankara-dugun-fotografcisi-art-produksiyon.jpg",
+      "name": "Ankara Düğün Fotoğrafçısı Art Prodüksiyon",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "saracoglu-medya": {
+      "path": "/img/place-photos/saracoglu-medya.webp",
+      "name": "SARAÇOĞLU MEDYA",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "studyo-anilar-2": {
+      "path": "/img/place-photos/studyo-anilar-2.jpg",
+      "name": "stüdyo anılar 2",
+      "category": "photographer",
+      "source": "local",
+      "attribution": null
+    },
+    "ekmeek-firin-pasta-cafe": {
+      "path": "/img/place-photos/ekmeek-firin-pasta-cafe.jpg",
+      "name": "Ekmeek – Fırın Pasta Cafe",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "golbasi-ekleristan": {
+      "path": "/img/place-photos/golbasi-ekleristan.webp",
+      "name": "Gölbaşı ekleristan",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "mozi-pastanesi": {
+      "path": "/img/place-photos/mozi-pastanesi.jpg",
+      "name": "Mozi Pastanesi",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "umut-namzet-pasta-cafe": {
+      "path": "/img/place-photos/umut-namzet-pasta-cafe.jpg",
+      "name": "UMUT NAMZET PASTA CAFE",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "isa-namzet-pasta-cafe": {
+      "path": "/img/place-photos/isa-namzet-pasta-cafe.jpg",
+      "name": "İSA NAMZET PASTA CAFE",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "mogan-pastanesi": {
+      "path": "/img/place-photos/mogan-pastanesi.jpg",
+      "name": "Mogan Pastanesi",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "haci-baki-golbasi": {
+      "path": "/img/place-photos/haci-baki-golbasi.jpg",
+      "name": "Hacı Baki Gölbaşı",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "damla-firin-pasta": {
+      "path": "/img/place-photos/damla-firin-pasta.jpg",
+      "name": "Damla Fırın Pasta",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "villa-cakes": {
+      "path": "/img/place-photos/villa-cakes.webp",
+      "name": "Villa Cakes",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "pastane-sinan": {
+      "path": "/img/place-photos/pastane-sinan.jpg",
+      "name": "Pastane Sinan",
+      "category": "bakery",
+      "source": "local",
+      "attribution": null
+    },
+    "orkide-cicekcilik": {
+      "path": "/img/place-photos/orkide-cicekcilik.jpg",
+      "name": "Orkide çiçekçilik",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "cicek-dunyasi": {
+      "path": "/img/place-photos/cicek-dunyasi.jpg",
+      "name": "çiçek dünyası",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "golbasi-cicek-sus-bitkileri": {
+      "path": "/img/place-photos/golbasi-cicek-sus-bitkileri.jpg",
+      "name": "Gölbaşı Çiçek-Süs Bitkileri",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "beyaz-saray-cicekcilik": {
+      "path": "/img/place-photos/beyaz-saray-cicekcilik.jpg",
+      "name": "Beyaz Saray Çiçekçilik",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "golbasi-cicekcilik": {
+      "path": "/img/place-photos/golbasi-cicekcilik.webp",
+      "name": "Gölbaşı çiçekçilik",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "uzay-cicekcilik": {
+      "path": "/img/place-photos/uzay-cicekcilik.webp",
+      "name": "Uzay Çiçekçilik",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    },
+    "azra-cicek": {
+      "path": "/img/place-photos/azra-cicek.jpg",
+      "name": "Azra çiçek",
+      "category": "florist",
+      "source": "local",
+      "attribution": null
+    }
+  }
 }
