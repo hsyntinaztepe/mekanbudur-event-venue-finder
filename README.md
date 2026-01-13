@@ -1,6 +1,6 @@
 # MekanBudur - Özel Etkinlik Pazar Yeri Platformu
 
-![MekanBudur Ana Sayfa](Screenshot%202026-01-13%20075700.jpg)
+![MekanBudur Ana Sayfa](template.jpg)
 
 ![Project Status](https://img.shields.io/badge/status-active-success.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
