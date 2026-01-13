@@ -1,406 +1,147 @@
-#  Evently - Özel Etkinlik Pazar Yeri
+# MekanBudur - Özel Etkinlik Pazar Yeri Platformu
 
-Modern mikroservis mimarisi ile geliştirilmiş, harita entegrasyonlu etkinlik ve hizmet pazar yeri platformu. Kullanıcılar etkinlik ilanları oluşturabilir, hizmet sağlayıcılar (vendor) bu ilanlara teklif verebilir.
+![MekanBudur Ana Sayfa](Screenshot%202026-01-13%20075700.jpg)
 
-## 📋 İçindekiler
+![Project Status](https://img.shields.io/badge/status-active-success.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Docker](https://img.shields.io/badge/docker-supported-2496ED.svg)
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
 
-- [Özellikler](#-özellikler)
-- [Teknoloji Stack'i](#-teknoloji-stacki)
-- [Proje Yapısı](#-proje-yapısı)
-- [Kurulum](#-kurulum)
-- [Kullanım](#-kullanım)
-- [API Dokümantasyonu](#-api-dokümantasyonu)
-- [Veritabanı Yapısı](#-veritabanı-yapısı)
-- [Docker Yapılandırması](#-docker-yapılandırması)
-- [Geliştirme Notları](#-geliştirme-notları)
+**MekanBudur**, etkinlik düzenleyiciler (kullanıcılar) ile hizmet sağlayıcıları (mekanlar, fotoğrafçılar, organizasyon firmaları vb.) buluşturan, konum tabanlı ve **"Ters Açık Artırma" (Reverse Auction)** modeline dayalı modern bir pazar yeri uygulamasıdır.
 
-## ✨ Özellikler
-
-### 🔐 Kimlik Doğrulama
-- JWT tabanlı kimlik doğrulama
-- Kullanıcı (User) ve Hizmet Sağlayıcı (Vendor) rolleri
-- Güvenli şifre hash'leme (ASP.NET Core Identity)
-
-### 📝 İlan Yönetimi
-- Etkinlik ilanları oluşturma ve yönetme
-- Kategori bazlı filtreleme
-- Bütçe ve konum bazlı arama
-- İlan detay sayfaları
-
-### 🗺️ Harita Entegrasyonu
-- İlan oluştururken haritadan konum seçimi
-- Vendor kayıt sırasında mekân konumu belirleme
-- Latitude/Longitude ve radius desteği
-- Adres etiketi kaydetme
-
-### 💰 Teklif Sistemi
-- Vendor'ların ilanlara teklif vermesi
-- İlan sahibinin teklifleri görüntülemesi
-- Teklif kabul/red işlemleri
-- Teklif durumu takibi
-
-### 🏢 Mikroservis Mimarisi
-- Ana API servisi (ilan, kullanıcı, teklif yönetimi)
-- Geo servisi (konum verileri yönetimi)
-- Web frontend (Razor Pages)
-- Servisler arası HTTP iletişim
-
-## 🛠️ Teknoloji Stack'i
-
-### Backend
-- **.NET 8.0** - Modern C# framework
-- **Entity Framework Core 8.0** - ORM (Code First yaklaşımı)
-- **PostgreSQL 16** - İlişkisel veritabanı
-- **JWT Bearer Authentication** - Token tabanlı kimlik doğrulama
-- **ASP.NET Core Minimal APIs** - RESTful API endpoints
-
-### Frontend
-- **ASP.NET Core Razor Pages** - Server-side rendering
-- **JavaScript** - İstemci tarafı etkileşimler
-
-### DevOps & Infrastructure
-- **Docker & Docker Compose** - Containerization
-- **pgAdmin 4** - Veritabanı yönetim arayüzü
-- **Swagger/OpenAPI** - API dokümantasyonu
-
-## 📁 Proje Yapısı
-
-```
-evently-docker-dotnet/
-├── src/
-│   ├── Api/                    # Ana API servisi
-│   │   ├── Data/              # DbContext ve veritabanı yapılandırması
-│   │   ├── Models/            # Entity modelleri (User, EventListing, Bid, vb.)
-│   │   ├── DTOs/              # Data Transfer Objects
-│   │   ├── Services/          # İş mantığı servisleri
-│   │   └── Program.cs         # API endpoint'leri ve yapılandırma
-│   │
-│   ├── Geo/                   # Geo servisi (konum yönetimi)
-│   │   ├── Data/              # GeoDbContext
-│   │   ├── Models/            # Place modeli
-│   │   └── Program.cs         # Geo API endpoint'leri
-│   │
-│   └── Web/                   # Frontend (Razor Pages)
-│       ├── Pages/             # Razor sayfaları
-│       └── wwwroot/           # Statik dosyalar (CSS, JS)
-│
-├── docker-compose.yml         # Docker servis yapılandırması
-└── README.md                  # Bu dosya
-```
-
-## 🚀 Kurulum
-
-### Gereksinimler
-
-- [Docker](https://www.docker.com/get-started) (v20.10+)
-- [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
-- .NET 8.0 SDK (geliştirme için, opsiyonel)
-
-### Hızlı Başlangıç
-
-1. **Projeyi klonlayın:**
-   ```bash
-   git clone <repository-url>
-   cd evently-docker-dotnet
-   ```
-
-2. **Docker Compose ile tüm servisleri başlatın:**
-   ```bash
-   docker compose up --build
-   ```
-
-3. **Servislerin hazır olmasını bekleyin** (ilk başlatmada 1-2 dakika sürebilir)
-
-4. **Erişim URL'leri:**
-   - 🌐 **Web Frontend**: http://localhost:8080
-   - 📡 **API (Swagger)**: http://localhost:8081/swagger
-   - 🗺️ **Geo API (Swagger)**: http://localhost:8082/swagger
-   - 🗄️ **pgAdmin**: http://localhost:5050
-
-### Google Places (opsiyonel)
-
-Ana sayfadaki **“Mekanları Keşfet”** görsel akışı ve `/Pazar-Alani` sayfasındaki Google Places mekanları için Google Places API gereklidir.
-
-#### 1) API key alma (Google Cloud) — adım adım
-
-1. Google Cloud Console’a girin: https://console.cloud.google.com/
-2. Yeni bir proje oluşturun (veya mevcut projeyi seçin).
-3. **Billing** bağlayın:
-  - Menü → **Billing** → projeye bir faturalandırma hesabı bağlayın.
-  - Not: Billing etkin değilse Google çoğu zaman `REQUEST_DENIED` döndürür.
-4. Gerekli API’yi açın:
-  - Menü → **APIs & Services** → **Library**
-  - **Places API**’yi bulun ve **Enable** edin.
-5. API anahtarı oluşturun:
-  - **APIs & Services** → **Credentials** → **Create credentials** → **API key**
-6. (Önerilir) Anahtarı kısıtlayın:
-  - Aynı ekranda ilgili key → **Edit API key**
-  - **API restrictions**: “Restrict key” → sadece **Places API** seçin.
-  - **Application restrictions**: Local Docker geliştirmede genelde *None* en sorunsuzudur.
-    - IP/Referrer kısıtlaması yanlış ayarlanırsa istekler bloklanır.
-
-#### 2) API key’i projeye verme (Docker/Windows)
-
-Uygulama Docker Compose ile çalışırken key, hosttan `GOOGLE_PLACES_API_KEY` adıyla alınır ve Geo servisine `GooglePlaces__ApiKey` olarak aktarılır.
-
-**Seçenek A (önerilen): `.env` dosyası (kalıcı, en pratik)**
-
-1. Bu klasörde `.env` dosyası oluşturun:
-  - `evently-docker-dotnet/.env`
-2. İçine şunu ekleyin (tırnaksız):
-  - `GOOGLE_PLACES_API_KEY=YOUR_KEY_HERE`
-3. Compose’u yeniden başlatın:
-  ```bash
-  docker compose up -d --build
-  ```
-
-**Seçenek B: PowerShell oturum değişkeni (geçici, hızlı test)**
-
-```powershell
-$env:GOOGLE_PLACES_API_KEY = "YOUR_KEY_HERE"
-docker compose up -d --build
-```
-
-**Seçenek C: `setx` ile kalıcı ortam değişkeni (terminali yeniden açmak gerekir)**
-
-```powershell
-setx GOOGLE_PLACES_API_KEY "YOUR_KEY_HERE"
-```
-
-Sonra yeni bir terminal açıp:
-
-```powershell
-docker compose up -d --build
-```
-
-#### 3) Çalıştığını doğrulama
-
-Key doğruysa şu endpoint `200` dönmeli:
-
-```powershell
-curl.exe -sS http://localhost:8081/api/google-places/golbasi
-```
-
-Key yoksa/yanlışsa genelde `500` ve detayda “API key is not configured” veya Google’dan gelen `REQUEST_DENIED` görürsünüz.
-
-Not: Billing etkin değilse Google `REQUEST_DENIED` döner; bu durumda uygulama mekanları boş döndürebilir veya sabit (demo) veriye düşebilir.
-
-### Servisleri Durdurma
-
-```bash
-docker compose down
-```
-
-Verileri de silmek için:
-```bash
-docker compose down -v
-```
-
-## 💻 Kullanım
-
-### Demo Hesaplar
-
-Proje ilk başlatıldığında otomatik olarak demo hesaplar oluşturulur:
-
-- **Kullanıcı (User)**
-  - Email: `user@demo.com`
-  - Şifre: `Pass123*`
-
-- **Hizmet Sağlayıcı (Vendor)**
-  - Email: `vendor@demo.com`
-  - Şifre: `Pass123*`
-
-- **Admin**
-  - Email: `admin@demo.com`
-  - Şifre: `demo123`
-
-### pgAdmin Kullanımı
-
-pgAdmin'e http://localhost:5050 adresinden erişebilirsiniz.
-
-**Giriş Bilgileri:**
-- Email: `admin@mekanbudur.com`
-- Password: `admin`
-
-**Önemli:** pgAdmin'in tam başlaması 30-60 saniye sürebilir.
-
-#### Veritabanı Bağlantısı Ekleme
-
-1. Sol panelde **"Servers"** üzerine sağ tıklayın → **"Register" → "Server..."**
-
-2. **Ana Veritabanı (evently):**
-   - **General** → Name: `MekanBudur DB`
-   - **Connection** → 
-     - Host: `db` (Docker içinden) veya `host.docker.internal` (host makineden)
-     - Port: `5432`
-     - Database: `evently`
-     - Username: `postgres`
-     - Password: `postgres`
-
-3. **Geo Veritabanı (evently_geo):**
-   - **General** → Name: `MekanBudur Geo DB`
-   - **Connection** →
-     - Host: `geodb` (Docker içinden) veya `host.docker.internal` (host makineden)
-     - Port: `5432`
-     - Database: `evently_geo`
-     - Username: `postgres`
-     - Password: `postgres`
-
-## 📚 API Dokümantasyonu
-
-### Ana API Endpoints
-
-#### Kimlik Doğrulama
-- `POST /api/auth/register` - Yeni kullanıcı kaydı
-- `POST /api/auth/login` - Kullanıcı girişi
-
-#### Kategoriler
-- `GET /api/categories` - Tüm kategorileri listele
-
-#### İlanlar
-- `GET /api/listings` - İlanları listele (filtreli)
-  - Query params: `categoryId`, `q`, `location`, `minBudget`, `maxBudget`
-- `GET /api/listings/{id}` - İlan detayı
-- `GET /api/listings/mine` - Kendi ilanlarım (Auth: User)
-- `POST /api/listings` - Yeni ilan oluştur (Auth: User)
-
-#### Teklifler
-- `POST /api/bids` - Teklif ver (Auth: Vendor)
-- `GET /api/bids/mine` - Tekliflerim (Auth: Vendor)
-- `GET /api/listings/{id}/bids` - İlan teklifleri (Auth: İlan sahibi)
-- `POST /api/bids/{id}/accept` - Teklif kabul et (Auth: User)
-
-#### Geo Proxy
-- `GET /api/geo/listings/{id}` - İlan konum bilgisi
-- `GET /api/geo/vendors/{userId}` - Vendor mekân konumu
-
-### Geo API Endpoints
-
-- `POST /api/places/upsert` - Konum ekle/güncelle
-- `GET /api/places/by-ref` - Referans tip ve ID'ye göre konum getir
-  - Query params: `refType` (Listing/Vendor), `refId`
-
-**Detaylı API dokümantasyonu için:** http://localhost:8081/swagger
-
-## 🗄️ Veritabanı Yapısı
-
-### Ana Veritabanı (evently)
-
-#### Tablolar
-- **Users** - Kullanıcı bilgileri (User/Vendor rolleri)
-- **VendorProfiles** - Vendor profil bilgileri
-- **ServiceCategories** - Hizmet kategorileri (Venue, Bakery, Photographer, vb.)
-- **EventListings** - Etkinlik ilanları
-- **Bids** - Teklifler
-
-#### İlişkiler
-- User ↔ EventListing (1:N)
-- User ↔ VendorProfile (1:1)
-- EventListing ↔ Bid (1:N)
-- EventListing ↔ ServiceCategory (N:1)
-
-### Geo Veritabanı (evently_geo)
-
-#### Tablolar
-- **Places** - Konum bilgileri
-  - `RefType`: "Listing" veya "Vendor"
-  - `RefId`: İlgili entity'nin ID'si
-  - `Latitude`, `Longitude`: Koordinatlar
-  - `Radius`: Yarıçap (metre)
-  - `AddressLabel`: Adres etiketi
-
-### Veritabanı Bağlantı Bilgileri
-
-**Ana DB:**
-- Host: `localhost:5432`
-- Database: `evently`
-- User: `postgres`
-- Password: `postgres`
-
-**Geo DB:**
-- Host: `localhost:5433`
-- Database: `evently_geo`
-- User: `postgres`
-- Password: `postgres`
-
-## 🐳 Docker Yapılandırması
-
-### Servisler
-
-| Servis | Port | Açıklama |
-|--------|------|----------|
-| `web` | 8080 | Frontend (Razor Pages) |
-| `api` | 8081 | Ana API servisi |
-| `geo` | 8082 | Geo servisi |
-| `db` | 5432 | PostgreSQL (Ana DB) |
-| `geodb` | 5433 | PostgreSQL (Geo DB) |
-| `pgadmin` | 5050 | pgAdmin web arayüzü |
-
-### Volume'lar
-
-- `db_data` - Ana veritabanı verileri
-- `geodb_data` - Geo veritabanı verileri
-- `pgadmin_data` - pgAdmin yapılandırması
-
-### Health Checks
-
-Tüm servisler health check ile izlenir. Servisler sağlıklı olduğunda bağımlı servisler başlatılır.
-
-## 🔧 Geliştirme Notları
-
-### Code First Yaklaşımı
-
-Proje **Entity Framework Core Code First** yaklaşımı kullanmaktadır:
-
-- Model sınıfları `Models/` klasöründe tanımlı
-- DbContext'ler `Data/` klasöründe
-- İlişkiler `OnModelCreating` metodunda yapılandırılmış
-- Şema oluşturma: `EnsureCreated()` (demo için)
-
-**⚠️ Önemli:** Üretim ortamında `EnsureCreated()` yerine **EF Core Migrations** kullanılmalıdır.
-
-### Environment Variables
-
-Docker Compose içinde environment variable'lar ile yapılandırma yapılır:
-
-```yaml
-ConnectionStrings__Default=Host=db;Port=5432;Database=evently;...
-Jwt__Key=supersecret_dev_jwt_key_change_me
-GeoService__BaseUrl=http://geo:8080
-```
-
-### Seed Data
-
-İlk başlatmada otomatik olarak:
-- Demo kullanıcılar oluşturulur
-- Hizmet kategorileri eklenir
-- Örnek ilanlar oluşturulur
-
-### CORS Yapılandırması
-
-Geo servisi tüm origin'lere açık (`*`). Üretimde spesifik origin'ler belirtilmelidir.
-
-### JWT Token
-
-- Development için basit bir key kullanılmaktadır
-- Üretimde güçlü, güvenli bir key kullanılmalıdır
-
-## 📝 Lisans
-
-Bu proje eğitim/demo amaçlı geliştirilmiştir.
-
-## 🤝 Katkıda Bulunma
-
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit edin (`git commit -m 'Add amazing feature'`)
-4. Push edin (`git push origin feature/amazing-feature`)
-5. Pull Request açın
-
-## 📧 İletişim
-
-Sorularınız için issue açabilirsiniz.
+"Mekandan hizmete, etkinliğin için her şey MekanBudur'da."
 
 ---
 
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+## 📋 İçindekiler
+
+- [Proje Hakkında](#-proje-hakkında)
+- [Temel Özellikler](#-temel-özellikler)
+- [Mimari Yapı](#-mimari-yapı)
+- [Teknoloji Yığını](#-teknoloji-yığını)
+- [Veritabanı Tasarımı](#-veritabanı-tasarımı)
+- [Kurulum ve Çalıştırma](#-kurulum-ve-çalıştırma)
+- [Kullanım Senaryoları](#-kullanım-senaryoları)
+
+---
+
+## 🚀 Proje Hakkında
+
+Bu proje, geleneksel ilan sitelerinin aksine, kullanıcının ihtiyacını belirttiği ve hizmet sağlayıcıların bu ihtiyaca teklif verdiği bir yapı sunar. Mikroservis mimarisi prensipleriyle tasarlanmış olup, servisler arası iletişim ve konteynerizasyon (Docker) yapılarını pekiştirmek amacıyla geliştirilmiştir.
+
+**Nasıl Çalışır?**
+1. **Keşfet:** Kullanıcılar etkinlik türüne ve şehre göre arama yapar.
+2. **Karşılaştır:** Hizmet sağlayıcıların profillerini ve puanlarını inceler.
+3. **Teklif Al:** İlan oluşturarak tedarikçilerden fiyat teklifleri toplar.
+
+---
+
+## ✨ Temel Özellikler
+
+- **Ters Açık Artırma (Reverse Auction):** İlan sahibi beklemede kalır, tedarikçiler işi almak için fiyat teklifi sunar.
+- **Konum Tabanlı Keşif:** Leaflet.js entegrasyonu ile ilanlar ve mekanlar harita üzerinde görüntülenir.
+- **Rol Bazlı Yönetim:**
+  - **User (Kullanıcı):** İlan oluşturma, teklif değerlendirme, mekan yorumlama.
+  - **Vendor (Hizmet Sağlayıcı):** Profil yönetimi, hizmet kategorileri belirleme, açık ilanlara teklif verme.
+  - **Admin:** İçerik denetimi, kullanıcı/mekan silme ve platform yönetimi.
+- **Hibrit Veri Yapısı:** Google Places API verileri ile yerel verilerin harmanlandığı hibrit harita sistemi.
+- **Güvenlik:** JWT (JSON Web Token) tabanlı güvenli kimlik doğrulama.
+
+---
+
+## 🏗 Mimari Yapı
+
+Proje, sorumlulukların ayrıldığı modüler bir yapıya sahiptir ve Docker üzerinde koşar:
+
+1. **Main API Service (.NET):** Sistemin çekirdeğidir. Kimlik doğrulama, ilan yönetimi, teklif işlemleri ve veritabanı CRUD operasyonlarını yürütür.
+2. **Geo Service (Microservice):** Konumsal hesaplamalar ve dış harita API'leri (Google Places) ile iletişimi sağlayan izole servis.
+3. **Client (Web UI):** Vanilla JS ile geliştirilmiş, RESTful API ile haberleşen, responsive kullanıcı arayüzü.
+
+---
+
+## 🛠 Teknoloji Yığını
+
+### Backend
+- **Framework:** .NET 8 (Minimal API Mimarisi)
+- **Dil:** C#
+- **Veritabanı:** PostgreSQL (Npgsql)
+- **ORM:** Entity Framework Core
+- **Auth:** JWT Bearer Authentication
+
+### Frontend
+- **Dil:** JavaScript (ES6+ Vanilla - Frameworksüz)
+- **Harita:** Leaflet.js & OpenStreetMap
+- **Tasarım:** HTML5, CSS3 (Responsive Design)
+
+### DevOps & Altyapı
+- **Container:** Docker & Docker Compose
+- **İletişim:** HTTP RESTful API
+
+---
+
+## 💾 Veritabanı Tasarımı
+
+Sistem ilişkisel veritabanı (Relational DB) üzerine kuruludur. Ana varlıklar şunlardır:
+
+* **Users:** Temel kimlik bilgileri ve Rol (User, Vendor, Admin).
+* **VendorProfiles:** Hizmet sağlayıcılara ait detaylar (Kapasite, Hizmet Türleri, Görseller, Sosyal Medya Linkleri).
+* **EventListings:** Kullanıcı ilanları. `EventListingItems` tablosu ile bire-çok ilişkiye sahiptir (Örn: Bir ilanda hem Fotoğrafçı hem Pastane olabilir).
+* **Bids:** Verilen teklifler. `BidItems` ile hangi hizmete ne kadar fiyat verildiği tutulur.
+* **Reviews & Ratings:** Mekan puanlama ve yorumlama sistemi.
+
+---
+
+## 💻 Kurulum ve Çalıştırma
+
+Proje Docker ile çalışmaya hazırdır. Aşağıdaki adımları takip ederek projeyi yerel ortamınızda ayağa kaldırabilirsiniz.
+
+### Gereksinimler
+- Docker Desktop & Docker Compose
+- .NET SDK 8.0 (Geliştirme yapılacaksa)
+
+### Adımlar
+
+1. **Repoyu Klonlayın:**
+   ```bash
+   git clone [https://github.com/hsyntinaztepe/mekanbudur-event-venue-finder.git](https://github.com/hsyntinaztepe/mekanbudur-event-venue-finder.git)
+   cd mekanbudur-event-venue-finder
+   
+2. **Docker ile Ayağa Kaldırın:** Proje dizininde terminali açın ve şu komutu çalıştırın:
+   ```bash
+   docker-compose up --build
+Bu işlem Veritabanı, Main API ve Geo Service konteynerlerini yapılandırıp başlatacaktır.
+
+3. **Uygulamaya Erişin:**
+- Web Arayüzü: http://localhost:8080
+- Swagger API Dokümantasyonu: http://localhost:8081/swagger
+
+## 📱 Kullanım Senaryoları
+
+**Bir Etkinlik Sahibi Olarak (User):**
+
+1-Sisteme kayıt olun ve giriş yapın.
+
+2-"İlan Oluştur" butonuna tıklayın.
+
+3-Haritadan etkinlik konumunu seçin, tarihi girin.
+
+4-İhtiyaçlarınızı (örn: Düğün Salonu - 50.000 TL, Fotoğrafçı - 5.000 TL) ekleyip ilanı yayınlayın.
+
+5-Gelen teklifleri "Tekliflerim" sayfasından yönetin ve en uygununu onaylayın.
+
+**Bir Hizmet Sağlayıcı Olarak (Vendor):**
+
+1-"Kurumsal Kayıt" ile işletmenizi kaydedin (Hizmet kategorilerinizi seçin).
+
+2-"Kurumsal Panel" üzerinden profilinizi düzenleyin (Fotoğraf yükleyin, açıklama girin).
+
+3-"Pazar Alanı"na giderek açık ilanları listeleyin.
+
+4-Hizmet verebileceğiniz ilanlara fiyat teklifi gönderin.
+
+## 👨‍💻 Geliştirici
+
+**Hüseyin Tınaztepe**
+
+
